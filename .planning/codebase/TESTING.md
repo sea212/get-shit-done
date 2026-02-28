@@ -1,47 +1,38 @@
 # Testing Patterns
 
-**Analysis Date:** 2025-02-27
+**Analysis Date:** 2025-02-23
 
 ## Test Framework
 
 **Runner:**
-- Node.js built-in test runner (`node --test`)
-- Config: None (command-line based)
+- Node.js built-in test runner (`node:test`).
+- Config: Executed directly via npm scripts without external configuration files.
 
 **Assertion Library:**
-- `node:assert` (e.g., `assert.strictEqual`, `assert.deepStrictEqual`)
+- Node.js built-in assert module (`node:assert`).
+- Matchers: `assert.strictEqual`, `assert.deepStrictEqual`, `assert.ok`.
 
 **Run Commands:**
 ```bash
-npm test                      # Run all tests using node --test tests/*.test.cjs
-npm run test:coverage         # Run with coverage using c8
+npm test                              # Run all tests
+npm run test:coverage                 # Coverage report using c8
 ```
 
 ## Test File Organization
 
 **Location:**
-- Separate directory: `tests/` at the project root.
+- Tests are located in a dedicated `tests/` directory at the project root.
 
 **Naming:**
-- `[module].test.cjs` (e.g., `tests/core.test.cjs`, `tests/phase.test.cjs`)
+- `[module].test.cjs` (e.g., `core.test.cjs`, `config.test.cjs`).
 
 **Structure:**
 ```
 tests/
-├── commands.test.cjs
-├── config.test.cjs
-├── core.test.cjs
-├── dispatcher.test.cjs
-├── frontmatter-cli.test.cjs
-├── frontmatter.test.cjs
-├── helpers.cjs
-├── init.test.cjs
-├── milestone.test.cjs
-├── phase.test.cjs
-├── roadmap.test.cjs
-├── state.test.cjs
-├── verify-health.test.cjs
-└── verify.test.cjs
+  core.test.cjs
+  config.test.cjs
+  init.test.cjs
+  helpers.cjs
 ```
 
 ## Test Structure
@@ -50,58 +41,76 @@ tests/
 ```javascript
 const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
+const fs = require('fs');
 
-describe('Module Section', () => {
-  beforeEach(() => {
-    // Setup logic (e.g., creating temporary directories)
-  });
+describe('moduleName', () => {
+  describe('functionName', () => {
+    let tmpDir;
 
-  afterEach(() => {
-    // Cleanup logic
-  });
+    beforeEach(() => {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-test-'));
+    });
 
-  test('should perform specific action', () => {
-    // Test logic and assertions
-    assert.strictEqual(actual, expected);
+    afterEach(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    test('should do expected behavior', () => {
+      // test logic
+      assert.strictEqual(actual, expected);
+    });
   });
 });
 ```
 
 **Patterns:**
-- `beforeEach`: Common setup for file system tests. Uses `fs.mkdtempSync` for isolated test environments.
-- `afterEach`: Clean up temporary directories using `fs.rmSync(tmpDir, { recursive: true, force: true })`.
-- `Assertion pattern`: Strict equality (`assert.strictEqual`) and deep object comparison (`assert.deepStrictEqual`).
+- `describe` blocks group tests by function or module.
+- `beforeEach` and `afterEach` hooks are extensively used to scaffold and teardown isolated temporary directories.
+- Tests often explicitly document regression testing (e.g., adding `(REG-01)` to test names).
 
 ## Mocking
 
 **Framework:**
-- Manual mocking/stubbing (no dedicated library like Sinon or Jest mocks detected).
+- Minimal external mocking. Node.js `fs` and `child_process` are tested by working with actual temporary filesystem environments instead of virtual mocks.
 
 **Patterns:**
-- Mocking the file system by redirecting operations to temporary directories created in `beforeEach`.
-- Mocking global state by saving and restoring (e.g., `originalCwd = process.cwd(); ... process.chdir(tmpDir);`).
+```javascript
+let tmpDir;
+
+beforeEach(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
+  fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+});
+
+afterEach(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+```
 
 **What to Mock:**
-- File system operations.
-- Configuration loading.
-- Git operations (some tests may mock `execSync` indirectly).
+- File system scenarios are mocked manually by building temporary directories (`fs.mkdtempSync`) and writing dummy configurations, markdown files, and phase directories.
 
 **What NOT to Mock:**
-- Core logic and utility functions.
+- Pure internal utility functions are tested natively.
 
 ## Fixtures and Factories
 
 **Test Data:**
-- Programmatic creation of test files and configurations within `beforeEach` or specific tests.
-- Example: `fs.writeFileSync(path.join(tmpDir, '.planning', 'config.json'), JSON.stringify(obj, null, 2));`
+- Minimal standalone fixture files.
+- Test data (like `config.json` or `ROADMAP.md` contents) is written dynamically during the test setup or within the test itself using helper functions.
 
 **Location:**
-- Inlined within test files as helper functions (e.g., `writeConfig(obj)` in `tests/core.test.cjs`).
+- Inline helper functions like `writeConfig(obj)` are declared directly within test suites.
 
 ## Coverage
 
 **Requirements:**
-- Target: 70% line coverage (defined in `package.json`).
+- 70% line coverage is enforced via CI/CD.
+
+**Configuration:**
+- Uses the `c8` tool.
+- Includes: `get-shit-done/bin/lib/*.cjs`.
+- Excludes: `tests/**`.
 
 **View Coverage:**
 ```bash
@@ -111,25 +120,24 @@ npm run test:coverage
 ## Test Types
 
 **Unit Tests:**
-- Majority of tests in `tests/` focus on individual exported functions (e.g., `core.test.cjs`, `frontmatter.test.cjs`).
+- Fast, isolated testing of core logic functions (`tests/core.test.cjs`) using dynamic files.
 
 **Integration Tests:**
-- Tests that verify command interactions with the file system (e.g., `phase.test.cjs`, `milestone.test.cjs`).
-
-**E2E Tests:**
-- Not explicitly labeled, but CLI dispatcher tests (`dispatcher.test.cjs`) may cover end-to-end command execution.
+- Many tests cover higher-level integration involving file parsing, path resolution, and configuration defaults (e.g., `tests/commands.test.cjs`).
 
 ## Common Patterns
 
-**Async Testing:**
-- Standard async/await in test functions if needed, although many tests are synchronous.
+**Error and Default Fallback Testing:**
+Tests explicitly check safe fallback scenarios where files are missing or malformed.
+```javascript
+test('returns defaults when config.json is missing', () => {
+  const config = loadConfig(tmpDir);
+  assert.strictEqual(config.model_profile, 'balanced');
+});
 
-**Error Testing:**
-- Testing `try/catch` behavior and ensuring `null` or defaults are returned on failure (e.g., `safeReadFile` testing for missing files).
-
-**Regression Testing:**
-- Identified in comments (e.g., `REG-01`, `REG-02` in `tests/core.test.cjs`).
-
----
-
-*Testing analysis: 2025-02-27*
+test('returns defaults when config.json contains invalid JSON', () => {
+  fs.writeFileSync(path.join(tmpDir, '.planning', 'config.json'), 'not valid json {{{{');
+  const config = loadConfig(tmpDir);
+  assert.strictEqual(config.commit_docs, true);
+});
+```

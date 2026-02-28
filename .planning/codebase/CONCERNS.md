@@ -1,65 +1,61 @@
 # Codebase Concerns
 
-**Analysis Date:** 2025-05-15
+**Analysis Date:** 2025-02-18
 
 ## Tech Debt
 
-**Monolithic Installer:**
-- Issue: `bin/install.js` is over 2000 lines long, handling multiple runtimes (Claude, OpenCode, Gemini, Codex) and complex shell hook installations in a single file.
-- Files: `bin/install.js`
-- Impact: Difficult to maintain, test, and extend. High risk of regressions when adding support for new AI CLIs.
-- Fix approach: Refactor into smaller modules based on runtime-specific logic and shared utility functions.
+**Monolithic Utility Files:**
+- Issue: Several utility files in the bin library are growing quite large and handling multiple distinct concerns.
+  - `get-shit-done/bin/lib/phase.cjs` (871 lines)
+  - `get-shit-done/bin/lib/verify.cjs` (773 lines)
+  - `get-shit-done/bin/lib/init.cjs` (710 lines)
+- Why: Organic growth as CLI features and workflows were sequentially added over time.
+- Impact: Increased maintenance difficulty, higher risk of merge conflicts, and higher cognitive load when tracing bugs.
+- Fix approach: Refactor these large library files into smaller, focused modules grouped by specific sub-commands rather than broad feature categories.
 
-**Fragile Markdown Parsing:**
-- Issue: Extensive use of complex Regular Expressions to parse and update Markdown files (`STATE.md`, `ROADMAP.md`).
-- Files: `get-shit-done/bin/lib/state.cjs`, `get-shit-done/bin/lib/roadmap.cjs`, `get-shit-done/bin/lib/verify.cjs`
-- Impact: Minor formatting changes by users or LLMs can break the state management and progression engine.
-- Fix approach: Transition to a proper Markdown AST parser (like `unified` or `remark`) for more robust document manipulation.
+**CLI Dispatcher Monolith:**
+- Issue: The main CLI tool entrypoint `get-shit-done/bin/gsd-tools.cjs` (588 lines) is a massive switch statement routing all CLI commands.
+- Why: Centralized routing was simple to implement initially.
+- Impact: Difficult to navigate and scale as more commands are added. High risk of breaking existing command resolution when modifying the switch statement.
+- Fix approach: Implement a more dynamic, map-based command registry or separate routing definitions.
 
-**Sync Frontmatter Implementation:**
-- Issue: State is dual-stored in YAML frontmatter and Markdown body, requiring a custom sync mechanism.
-- Files: `get-shit-done/bin/lib/state.cjs`
-- Impact: Potential for desynchronization if manual edits are made; complexity in maintaining the `writeStateMd` wrapper.
-- Fix approach: Standardize on either Frontmatter or structured Markdown blocks, reducing the need for complex synchronization logic.
+## Known Bugs
+
+Not detected
 
 ## Security Considerations
 
-**Command Injection Risks:**
-- Issue: Use of `execSync` with string concatenation for Git commands and file searches. While some sanitization exists, it remains a high-risk pattern.
-- Files: `get-shit-done/bin/lib/core.cjs`, `get-shit-done/bin/lib/init.cjs`
-- Current mitigation: Basic character replacement/escaping in `isGitIgnored` and `execGit`.
-- Recommendations: Use the array-based signature of `spawnSync` or a dedicated library like `simple-git` to avoid shell interpolation entirely.
+Not detected
 
 ## Performance Bottlenecks
 
-**Large Payload Handling:**
-- Issue: Claude Code Bash tool has a ~50KB buffer limit. The system works around this by writing to temporary files.
-- Files: `get-shit-done/bin/lib/core.cjs`
-- Cause: JSON output for large codebase maps or project states can exceed terminal limits.
-- Improvement path: Implement streaming or pagination for large data transfers between the CLI and the AI agent.
+Not detected
 
 ## Fragile Areas
 
-**Phase Progression Engine:**
-- Files: `get-shit-done/bin/lib/state.cjs`, `get-shit-done/bin/lib/phase.cjs`
-- Why fragile: Relies on exact string matches for phase numbers (e.g., `12A.1`). The logic for comparing and advancing phases is complex.
-- Safe modification: Ensure all changes are covered by the extensive test suite in `tests/phase.test.cjs`.
-- Test coverage: Generally high, but corner cases in decimal phase numbering are complex.
+Not detected
+
+## Scaling Limits
+
+Not detected
+
+## Dependencies at Risk
+
+Not detected
+
+## Missing Critical Features
+
+Not detected
 
 ## Test Coverage Gaps
 
-**Installer Logic:**
-- What's not tested: The actual shell hook installation and global/local config directory resolution in `bin/install.js`.
-- Files: `bin/install.js`
-- Risk: Installation may fail on certain OS/shell combinations (e.g., Zsh vs Bash on macOS).
+**Template Logic Verification:**
+- What's not tested: The template selection and generation logic in `get-shit-done/bin/lib/template.cjs` has only ~5.4% test coverage, whereas the rest of the project is consistently above 90%.
+- Risk: Future changes to template logic, frontmatter reconstruction, or CLI arguments might silently break template generation since it's practically untested.
 - Priority: High
-
-**Brave Search Integration:**
-- What's not tested: The interaction with the Brave Search API and its configuration.
-- Files: `get-shit-done/bin/lib/config.cjs`, `get-shit-done/bin/lib/init.cjs`
-- Risk: Configuration detection might fail in different environments.
-- Priority: Medium
+- Difficulty to test: Medium. It requires setting up file system mocks or integration fixtures to safely assert on template file creation without messing up the actual project directory.
 
 ---
 
-*Concerns audit: 2025-05-15*
+*Concerns audit: 2025-02-18*
+*Update as issues are fixed or new ones discovered*

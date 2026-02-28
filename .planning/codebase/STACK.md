@@ -1,62 +1,64 @@
 # Technology Stack
 
-**Analysis Date:** 2025-02-17
+**Analysis Date:** 2025-02-15
 
 ## Languages
 
 **Primary:**
-- JavaScript (Node.js) - Entire codebase uses CommonJS modules (`.cjs`).
+- JavaScript (Node.js/CommonJS) - All application code and tooling (`.cjs`, `.js` extensions)
 
 **Secondary:**
-- None - Project is a Node.js CLI tool.
+- Markdown (`.md`) - Extensively used for agent prompts and phase planning templates
 
 ## Runtime
 
 **Environment:**
-- Node.js >=16.7.0 (specified in `package.json`)
+- Node.js >= 16.7.0 (CLI execution)
+- Relies heavily on built-in Node modules (`fs`, `path`, `child_process`, `os`, `crypto`, `readline`)
 
 **Package Manager:**
-- npm
+- npm (v10+, implied by lockfile and `devDependencies`)
 - Lockfile: `package-lock.json` present
 
 ## Frameworks
 
 **Core:**
-- Pure Node.js - No major application frameworks (Express, React, etc.) used. It's a CLI tool using built-in modules like `fs`, `path`, `child_process`, and `os`.
+- None (Vanilla Node.js CLI tool)
 
 **Testing:**
-- Node.js Built-in Test Runner (`node --test`) - Used for all test files in `tests/`.
-- `c8` - Used for code coverage.
+- Node.js native test runner (`node:test`) - Unit and integration tests
+- `node:assert` - Assertion library
 
 **Build/Dev:**
-- `esbuild` ^0.24.0 - Used for building hooks (`scripts/build-hooks.js`).
+- `esbuild` ^0.24.0 - Used via npm scripts for bundling hooks
+- `c8` ^11.0.0 - Test coverage reporting
 
 ## Key Dependencies
 
 **Critical:**
-- None in `dependencies` (only `devDependencies`). The project aims to be zero-dependency at runtime for the core CLI tools.
+- None (Zero runtime dependencies in `package.json`)
 
 **Infrastructure:**
-- `c8` ^11.0.0 - Code coverage tool used in `package.json` scripts.
-- `esbuild` ^0.24.0 - Fast bundler used for build scripts.
+- `child_process.execSync` - System integration for Git operations and filesystem commands.
 
 ## Configuration
 
 **Environment:**
-- Configured via environment variables (e.g., `BRAVE_API_KEY`) and local config files.
+- No strictly required environment variables for core functionality.
+- Optional variables: `BRAVE_API_KEY` for search capabilities. Configured paths for CLI AI tools (e.g., `CLAUDE_CONFIG_DIR`, `OPENCODE_CONFIG_DIR`, `GEMINI_CONFIG_DIR`, `CODEX_HOME`).
 
 **Build:**
-- `package.json`: Main manifest and script definition.
-- `scripts/build-hooks.js`: Custom build script for hooks.
+- Minimal. Script `scripts/build-hooks.js` configured to bundle output to `hooks/dist`.
 
 ## Platform Requirements
 
 **Development:**
-- Node.js >=16.7.0
+- Any platform with Node.js >= 16.7.0
 
 **Production:**
-- Any environment with Node.js >=16.7.0 installed. Designed to be run as a CLI tool within developer workspaces.
+- Distributed via git or npm, installed and run locally or globally.
+- Compatible with Unix and Windows paths.
 
 ---
 
-*Stack analysis: 2025-02-17*
+*Stack analysis: 2025-02-15*

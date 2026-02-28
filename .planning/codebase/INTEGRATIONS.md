@@ -1,58 +1,60 @@
 # External Integrations
 
-**Analysis Date:** 2025-02-17
+**Analysis Date:** 2025-02-15
 
 ## APIs & External Services
 
-**Search:**
-- Brave Search - Used for web searching during research phases.
-  - SDK/Client: Direct `fetch` to `https://api.search.brave.com/res/v1/web/search`.
-  - Auth: `BRAVE_API_KEY` (env var) or `~/.gsd/brave_api_key` (local file).
-
-**LLMs:**
-- Anthropic Claude - The codebase is designed for models like Opus, Sonnet, and Haiku.
-  - Integration: Indirect model selection through `MODEL_PROFILES` in `get-shit-done/bin/lib/core.cjs`.
-  - Auth: Handled by the model caller (e.g., Claude Code, Gemini CLI).
+**Search APIs:**
+- Brave Search API - Web search functionality for AI agents (`cmdWebsearch`)
+  - Integration method: REST API via `fetch()` (native Node.js)
+  - Auth: `X-Subscription-Token` header using `BRAVE_API_KEY` env var or fallback to `~/.get-shit-done/brave_api_key`
+  - Endpoints used: `https://api.search.brave.com/res/v1/web/search`
 
 ## Data Storage
 
 **Databases:**
-- None - Project relies on the filesystem for data persistence.
+- None
 
 **File Storage:**
-- Local Filesystem Only - Uses `fs` to manage planning artifacts in `.planning/`.
+- Local filesystem only
+  - Operations rely heavily on `fs` module to manage `.planning/`, `.md` phase files, and project state.
 
 **Caching:**
-- None detected.
+- None
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Custom - CLI auth primarily through environment variables and local configuration files.
+- Custom / Local configuration files only
+  - API keys read from user's `os.homedir()` (e.g., `~/.get-shit-done/brave_api_key`)
+  - Agent config locations detected via environment variables (e.g., `CLAUDE_CONFIG_DIR`, `OPENCODE_CONFIG_DIR`, `GEMINI_CONFIG_DIR`, `CODEX_HOME`) or default paths (e.g., `~/.claude.json`)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None - Standard Node.js error reporting via `process.stderr`.
+- None (stdout/stderr only via core output functions)
 
 **Logs:**
-- Console Output - Detailed status messages and JSON output for sub-agent communication.
+- CLI console output, no external logging service.
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Local Workspace - Designed to run on developer machines.
+- Distributed as open-source code/CLI package.
 
 **CI Pipeline:**
-- GitHub Actions - Workflow in `.github/workflows/test.yml` for testing and linting.
+- GitHub Actions - Testing and issue management
+  - Workflows: `test.yml` (tests & coverage), `auto-label-issues.yml`
+  - Environment: Node 18, 20, 22 test matrices.
 
 ## Environment Configuration
 
-**Required env vars:**
-- `BRAVE_API_KEY` - Optional: Enables Brave Search integration.
+**Development:**
+- Optional env vars: `BRAVE_API_KEY`
+- Secrets location: Optional local `.env` or `~/.get-shit-done/brave_api_key` (gitignored).
 
-**Secrets location:**
-- Environment variables or local home directory (`~/.gsd/`).
+**Production:**
+- Installed locally on the user's system; relies on user's environment for keys and config paths.
 
 ## Webhooks & Callbacks
 
@@ -62,13 +64,6 @@
 **Outgoing:**
 - None
 
-## Git Integration
-
-**Version Control:**
-- Git CLI - Used for committing docs and managing phase/milestone branches.
-  - Implementation: `execGit` function in `get-shit-done/bin/lib/core.cjs`.
-  - Config: `branching_strategy`, `phase_branch_template`, etc., in `.planning/config.json`.
-
 ---
 
-*Integration audit: 2025-02-17*
+*Integration audit: 2025-02-15*

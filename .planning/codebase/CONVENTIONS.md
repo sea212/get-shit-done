@@ -1,96 +1,88 @@
 # Coding Conventions
 
-**Analysis Date:** 2025-02-27
+**Analysis Date:** 2025-02-23
 
 ## Naming Patterns
 
 **Files:**
-- Main logic: `kebab-case.cjs` (e.g., `get-shit-done/bin/lib/core.cjs`)
-- CLI entry points: `gsd-tools.cjs`
-- Tests: `kebab-case.test.cjs` (e.g., `tests/core.test.cjs`)
+- kebab-case for tool files (e.g., `get-shit-done/bin/gsd-tools.cjs`)
+- kebab-case for library and hook files (e.g., `get-shit-done/bin/lib/core.cjs`, `hooks/gsd-check-update.js`)
+- `*.test.cjs` for test files (e.g., `tests/core.test.cjs`)
 
 **Functions:**
-- Internal: `camelCase` (e.g., `safeReadFile`, `loadConfig`)
-- CLI Command Handlers: `cmd[CommandName]` (e.g., `cmdPhasesList`, `cmdGenerateSlug`)
-- Internal helpers: `[name]Internal` suffix (e.g., `findPhaseInternal`, `generateSlugInternal`)
+- camelCase for all functions (e.g., `loadConfig`, `generateSlugInternal`)
+- `cmd[CommandName]` prefix for CLI command handler functions (e.g., `cmdStateJson`, `cmdCommit`)
 
 **Variables:**
-- `camelCase` (e.g., `phasesDir`, `normalized`, `result`)
+- camelCase for variables (e.g., `rawIndex`, `tmpDir`)
+- UPPER_SNAKE_CASE for global constants (e.g., `MODEL_PROFILES`)
 
 **Types:**
-- Plain JavaScript (CommonJS), no explicit type definitions.
-
-**Constants:**
-- `UPPER_SNAKE_CASE` (e.g., `MODEL_PROFILES`)
+- The codebase uses plain JavaScript/CommonJS, so no TypeScript types or interfaces are used.
 
 ## Code Style
 
 **Formatting:**
-- Indentation: Two spaces
-- Semicolons: Required (e.g., `const fs = require('fs');`)
-- Quotes: Single quotes preferred for strings (e.g., `require('fs')`)
+- No automated formatter (like Prettier) is explicitly configured.
+- 2 space indentation.
+- Single quotes for strings.
+- Semicolons are required at the end of statements.
 
 **Linting:**
-- Not detected (no `.eslintrc` or `.prettierrc` present)
-- Developers follow existing style manually
+- No automated linter (like ESLint) is configured in `package.json`.
 
 ## Import Organization
 
 **Order:**
-1. Node.js built-ins (e.g., `fs`, `path`, `child_process`)
-2. Local project files (e.g., `./core.cjs`, `./frontmatter.cjs`)
+1. Built-in Node.js modules (`fs`, `path`, `child_process`, `os`)
+2. Internal modules (`./lib/core.cjs`, `./lib/state.cjs`)
 
-**Path Aliases:**
-- None detected. Relative paths are used (e.g., `require('../get-shit-done/bin/lib/core.cjs')`).
+**Grouping:**
+- `require` statements are block-grouped at the top of the file using `const`.
+- No path aliases are used; relative paths are standard.
 
 ## Error Handling
 
 **Patterns:**
-- `try/catch` blocks used extensively for file system operations.
-- CLI-level error handler `error(message)` in `get-shit-done/bin/lib/core.cjs` writes to `stderr` and exits with code 1.
-- `safeReadFile` style: returns `null` or a default value on failure instead of throwing.
+- Custom `error(message)` function imported from `core.cjs` that writes to `process.stderr` and calls `process.exit(1)` for fatal errors.
+- Broad use of `try/catch` blocks around file system operations.
+- Operations that fail typically return `null` or a default object instead of crashing or throwing exceptions upwards.
 
 ## Logging
 
 **Framework:**
-- `output(result, raw, rawValue)` in `get-shit-done/bin/lib/core.cjs` handles all CLI output.
-- Logs JSON by default, or raw values if `raw` flag is set.
-- Handles large payloads by writing to temporary files.
+- Custom `output(result, raw, rawValue)` and `error(message)` functions in `core.cjs` proxy to `process.stdout.write` and `process.stderr.write`.
+- No external logging framework (like Pino or Winston) is used.
+
+**Patterns:**
+- Standardized output formatter checks if output exceeds 50KB to avoid buffer overflow, optionally writing to a temp file and prefixing with `@file:`.
 
 ## Comments
 
 **When to Comment:**
-- File headers describe module purpose.
-- Major sections are delineated with decorative lines.
+- Section separators use a distinct ASCII line pattern: `// ─── Section Name ─────────────────────────────────────────────────────────────`
+- Inline comments explain context, such as workarounds or optional overrides.
 
 **JSDoc/TSDoc:**
-- Minimal usage. Header comments use a block format:
-  ```javascript
-  /**
-   * Module Name — Brief Description
-   */
-  ```
+- Top-level block comments (`/** ... */`) describe the file/module's purpose.
+- Minimal JSDoc is used; parameters and return types are generally not documented formally.
 
 ## Function Design
 
 **Size:**
-- Moderate to large. Functions handle logical units of CLI commands (e.g., `cmdPhasesList` is ~60 lines).
+- The main CLI router (`main()` in `gsd-tools.cjs`) is large, handling deep switch/case routing.
+- Library utility functions are typically small and strictly focused.
 
 **Parameters:**
-- CLI handlers typically take `(cwd, options, raw)` or `(cwd, arg1, arg2, ..., raw)`.
+- `cwd` (Current Working Directory) is a ubiquitous first parameter for functions interacting with the file system.
+- A `raw` boolean flag is passed through most command functions to govern whether output should be formatted as JSON or raw strings.
 
 **Return Values:**
-- Most functions use `output()` to send data back to the caller and exit.
-- Internal functions return objects or primitive values.
+- Most CLI functions do not return values but exit via the `output()` helper.
+- Internal helper utilities explicitly return data, commonly falling back to defaults via `try/catch`.
 
 ## Module Design
 
 **Exports:**
-- CommonJS `module.exports` object at the end of the file (e.g., `get-shit-done/bin/lib/core.cjs`).
-
-**Barrel Files:**
-- None detected. Files import directly from specific modules.
-
----
-
-*Convention analysis: 2025-02-27*
+- Standard CommonJS `module.exports = { ... }` block at the bottom of library files.
+- Command-line entry points run immediately by invoking `main();` at the bottom of the script.
