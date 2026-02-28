@@ -9,14 +9,19 @@
 
 ### Phase Details
 
-**Phase 1: Environment Detection**
+## Phase 1: Environment Detection
 Goal: Detect `gemini-cli` environment
 Requirements: ENV-01, ENV-02
 Success criteria:
 1. `gsd-tools.cjs` or equivalent core libraries expose a reliable `isGeminiEnvironment()` check.
 2. The environment check correctly identifies when the tool is run by `gemini-cli`.
 
-**Phase 2: Model Resolution & Mapping**
+**Plans:** 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — Implement dynamic environment detection
+
+## Phase 2: Model Resolution & Mapping
 Goal: Map and resolve model profiles to Gemini variants
 Requirements: MOD-01, MOD-02, MOD-03, PROF-01, PROF-02
 Success criteria:
