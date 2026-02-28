@@ -7,8 +7,8 @@
 
 ### Environment Detection
 
-- [ ] **ENV-01**: System can detect if it is running within `gemini-cli`.
-- [ ] **ENV-02**: System falls back to default behavior if not in a Gemini environment.
+- [x] **ENV-01**: System can detect if it is running within `gemini-cli`.
+- [x] **ENV-02**: System falls back to default behavior if not in a Gemini environment.
 
 ### Model Mapping
 
@@ -37,8 +37,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENV-01 | Phase 1 | Pending |
-| ENV-02 | Phase 1 | Pending |
+| ENV-01 | Phase 1 | Complete |
+| ENV-02 | Phase 1 | Complete |
 | MOD-01 | Phase 2 | Pending |
 | MOD-02 | Phase 2 | Pending |
 | MOD-03 | Phase 2 | Pending |

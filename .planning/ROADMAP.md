@@ -4,7 +4,7 @@
 
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
-| 1 | Environment Detection | Detect `gemini-cli` environment | ENV-01, ENV-02 | 2 |
+| 1 | Environment Detection | Complete    | 2026-02-28 | 2 |
 | 2 | Model Resolution & Mapping | Map and resolve model profiles to Gemini variants | MOD-01, MOD-02, MOD-03, PROF-01, PROF-02 | 3 |
 
 ### Phase Details
@@ -16,7 +16,7 @@ Success criteria:
 1. `gsd-tools.cjs` or equivalent core libraries expose a reliable `isGeminiEnvironment()` check.
 2. The environment check correctly identifies when the tool is run by `gemini-cli`.
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Implement dynamic environment detection
