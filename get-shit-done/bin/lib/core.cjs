@@ -22,6 +22,15 @@ const MODEL_PROFILES = {
   'gsd-integration-checker':  { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
 };
 
+/**
+ * Detects if the tool is running within the gemini-cli environment.
+ * Evaluates dynamically to ensure it respects changes to process.env.
+ * @returns {boolean}
+ */
+function isGeminiEnvironment() {
+  return process.env.GEMINI_CLI === '1';
+}
+
 // ─── Output helpers ───────────────────────────────────────────────────────────
 
 function output(result, raw, rawValue) {
@@ -345,6 +354,11 @@ function getRoadmapPhaseInternal(cwd, phaseNum) {
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
 
+  // Future Phase 2: Add Gemini-specific model mapping here
+  if (isGeminiEnvironment()) {
+    // For now, fall back to standard behavior
+  }
+
   // Check per-agent override first
   const override = config.model_overrides?.[agentType];
   if (override) {
@@ -406,6 +420,7 @@ module.exports = {
   getArchivedPhaseDirs,
   getRoadmapPhaseInternal,
   resolveModelInternal,
+  isGeminiEnvironment,
   pathExistsInternal,
   generateSlugInternal,
   getMilestoneInfo,
