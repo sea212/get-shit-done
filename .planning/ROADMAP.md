@@ -2,10 +2,10 @@
 
 **2 phases** | **7 requirements mapped** | All v1 requirements covered ✓
 
-| # | Phase | Goal | Requirements | Success Criteria |
-|---|-------|------|--------------|------------------|
-| 1 | Environment Detection | Complete    | 2026-02-28 | 2 |
-| 2 | Model Resolution & Mapping | Map and resolve model profiles to Gemini variants | MOD-01, MOD-02, MOD-03, PROF-01, PROF-02 | 3 |
+| # | Phase | Goal | Requirements | Status |
+|---|-------|------|--------------|--------|
+| 1 | Environment Detection | Detect `gemini-cli` environment | ENV-01, ENV-02 | Complete ✓ |
+| 2 | Model Resolution & Mapping | Map and resolve model profiles to Gemini variants | MOD-01-03, PROF-01-02 | Complete ✓ |
 
 ### Phase Details
 
