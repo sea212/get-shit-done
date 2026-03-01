@@ -124,7 +124,14 @@ function loadConfig(cwd) {
       parallelization,
       brave_search: get('brave_search') ?? defaults.brave_search,
       model_overrides: parsed.model_overrides || null,
-      model_mapping: parsed.model_mapping || defaults.model_mapping,
+      model_mapping: {
+        ...defaults.model_mapping,
+        ...parsed.model_mapping,
+        gemini: {
+          ...defaults.model_mapping.gemini,
+          ...(parsed.model_mapping?.gemini || {})
+        }
+      },
     };
   } catch {
     return defaults;
