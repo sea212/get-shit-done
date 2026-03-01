@@ -5,7 +5,7 @@
 | # | Phase | Goal | Requirements | Status |
 |---|-------|------|--------------|--------|
 | 1 | Environment Detection | Detect `gemini-cli` environment | ENV-01, ENV-02 | Complete ✓ |
-| 2 | Model Resolution & Mapping | Map and resolve model profiles to Gemini variants | MOD-01-03, PROF-01-02 | Gap Closure ⟳ |
+| 2 | 2/2 | Complete    | 2026-03-01 | Gap Closure ⟳ |
 
 ### Phase Details
 
@@ -29,7 +29,7 @@ Success criteria:
 2. `config.json` default profiles gracefully handle the mapped names.
 3. Unit/Integration tests for `model-profile-resolution` pass with the new mapping logic.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Implement dynamic model mapping

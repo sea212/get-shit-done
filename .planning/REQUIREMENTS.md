@@ -12,8 +12,8 @@
 
 ### Model Mapping
 
-- [ ] **MOD-01**: Map "opus" tier to `gemini-3.1-pro-preview` in Gemini environments.
-- [ ] **MOD-02**: Map "sonnet" tier to `gemini-3-flash-preview` in Gemini environments.
+- [x] **MOD-01**: Map "opus" tier to `gemini-3.1-pro-preview` in Gemini environments.
+- [x] **MOD-02**: Map "sonnet" tier to `gemini-3-flash-preview` in Gemini environments.
 - [ ] **MOD-03**: Map "haiku" tier to `gemini-2.5-flash-lite` in Gemini environments.
 
 ### Profile Resolution Update
@@ -39,8 +39,8 @@
 |-------------|-------|--------|
 | ENV-01 | Phase 1 | Complete |
 | ENV-02 | Phase 1 | Complete |
-| MOD-01 | Phase 2 | Pending |
-| MOD-02 | Phase 2 | Pending |
+| MOD-01 | Phase 2 | Complete |
+| MOD-02 | Phase 2 | Complete |
 | MOD-03 | Phase 2 | Pending |
 | PROF-01 | Phase 2 | Pending |
 | PROF-02 | Phase 2 | Pending |
