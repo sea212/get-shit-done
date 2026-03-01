@@ -119,6 +119,21 @@ describe('loadConfig', () => {
     const config = loadConfig(tmpDir);
     assert.strictEqual(config.commit_docs, false);
   });
+
+  test('merges partial model_mapping with defaults (REG-03)', () => {
+    writeConfig({
+      model_mapping: {
+        gemini: {
+          sonnet: 'gemini-special-sonnet'
+        }
+      }
+    });
+    const config = loadConfig(tmpDir);
+    // Assert override is respected
+    assert.strictEqual(config.model_mapping.gemini.sonnet, 'gemini-special-sonnet');
+    // Assert other keys are preserved (deep merge)
+    assert.strictEqual(config.model_mapping.gemini.opus, 'gemini-3.1-pro-preview');
+  });
 });
 
 // ─── resolveModelInternal ──────────────────────────────────────────────────────
