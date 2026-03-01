@@ -199,6 +199,72 @@ describe('resolveModelInternal', () => {
       assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'inherit');
     });
   });
+
+  describe('Gemini environment mapping', () => {
+    let originalGeminiCli;
+
+    beforeEach(() => {
+      originalGeminiCli = process.env.GEMINI_CLI;
+    });
+
+    afterEach(() => {
+      if (originalGeminiCli === undefined) {
+        delete process.env.GEMINI_CLI;
+      } else {
+        process.env.GEMINI_CLI = originalGeminiCli;
+      }
+    });
+
+    test('maps opus to gemini-3.1-pro-preview when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'opus' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3.1-pro-preview');
+    });
+
+    test('maps claude-3-opus to gemini-3.1-pro-preview when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'claude-3-opus' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3.1-pro-preview');
+    });
+
+    test('maps sonnet to gemini-3-flash-preview when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'sonnet' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-preview');
+    });
+
+    test('maps claude-3-5-sonnet to gemini-3-flash-preview when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'claude-3-5-sonnet' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-preview');
+    });
+
+    test('maps haiku to gemini-2.5-flash-lite when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'haiku' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-2.5-flash-lite');
+    });
+
+    test('maps claude-3-5-haiku to gemini-2.5-flash-lite when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'claude-3-5-haiku' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-2.5-flash-lite');
+    });
+
+    test('preserves native gemini models when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'gemini-1.5-pro-002' } });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-1.5-pro-002');
+    });
+
+    test('throws error if resolved model does not start with gemini- when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_overrides: { 'gsd-executor': 'custom-model' } });
+      assert.throws(() => {
+        resolveModelInternal(tmpDir, 'gsd-executor');
+      }, /must start with 'gemini-'/);
+    });
+  });
 });
 
 // ─── escapeRegex ───────────────────────────────────────────────────────────────
