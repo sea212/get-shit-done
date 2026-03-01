@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Updating the "Get Shit Done" (GSD) framework and CLI tooling to natively support Gemini models and the `gemini-cli` environment. The project currently assigns Claude models based on profiles, and this effort will transition default model configurations and agent mappings to Gemini models when running in a Gemini environment.
+Updating the "Get Shit Done" (GSD) framework and CLI tooling to natively support Gemini models and the `gemini-cli` environment. The project enables seamless transition of model configurations and agent mappings to Gemini equivalents when running in a Gemini environment.
 
 ## Core Value
 
@@ -12,18 +12,18 @@ Ensure `get-shit-done` functions seamlessly in a Gemini-centric environment by a
 
 ### Validated
 
-- ✓ CLI Tool Hub execution and orchestration (Node.js)
-- ✓ Prompt-driven workflow state management in `.planning/`
-- ✓ Multi-agent system orchestration and Task delegation
-- ✓ Frontmatter and document validation
+- ✓ CLI Tool Hub execution and orchestration (Node.js) — v0.1
+- ✓ Prompt-driven workflow state management in `.planning/` — v0.1
+- ✓ Multi-agent system orchestration and Task delegation — v0.1
+- ✓ Frontmatter and document validation — v0.1
+- ✓ Detect `gemini-cli` environment dynamically — v1.0
+- ✓ Map abstract model tiers (opus, sonnet, haiku) to Gemini variants — v1.0
+- ✓ Profile resolution respects environment-aware mapping — v1.0
 
 ### Active
 
-- [ ] Detect `gemini-cli` environment dynamically
-- [ ] Map "opus" model profile to "gemini-3.1-pro-preview"
-- [ ] Map "sonnet" model profile to "gemini-3-flash-preview"
-- [ ] Map "haiku" model profile to "gemini-2.5-flash-lite"
-- [ ] Update default profile definitions to default to Gemini when in Gemini environments
+- [ ] Comprehensive integration tests for Gemini model assignments (v2)
+- [ ] Automated migration tool for legacy config.json files (v2 candidate)
 
 ### Out of Scope
 
@@ -31,20 +31,23 @@ Ensure `get-shit-done` functions seamlessly in a Gemini-centric environment by a
 
 ## Context
 
-- The framework is a vanilla Node.js CLI tool with executable markdown workflows.
-- Currently, model resolution happens in orchestrators and `config.json` (e.g., `model_overrides`, `model_profile`).
-- We need to hook into the model profile resolution to map Claude model tiers to Gemini equivalents when `gemini-cli` is detected.
-
-## Constraints
-
-- **Compatibility**: Must retain the zero-dependency Node.js architecture.
-- **Model Mapping**: Must reliably map the abstract model quality tiers (quality, balanced, budget) to specific Gemini models.
+Shipped v1.0 Gemini Migration.
+The framework now detects `GEMINI_CLI=1` and maps model tiers to Gemini preview/lite versions.
+Tech stack remains zero-dependency Node.js.
+Unit tests verify mapping logic and configuration deep-merging.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Map existing aliases to Gemini | Avoids rewriting all agent definitions, uses translation layer | — Pending |
+| Map existing aliases to Gemini | Avoids rewriting all agent definitions, uses translation layer | ✓ Good |
+| Move mapping to config.json | Allows user-level overrides and easier maintenance | ✓ Good |
+| Manual deep merge for config | Maintains zero-dependency goal while fixing shallow merge bug | ✓ Good |
+
+## Next Milestone Goals (v2.0)
+
+- Robust integration testing suite.
+- Configuration migration utilities.
 
 ---
-*Last updated: 2026-02-28 after initialization*
+*Last updated: 2026-03-01 after v1.0 milestone*
