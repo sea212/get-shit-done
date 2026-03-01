@@ -80,6 +80,16 @@ function loadConfig(cwd) {
     verifier: true,
     parallelization: true,
     brave_search: false,
+    model_mapping: {
+      gemini: {
+        "opus": "gemini-3.1-pro-preview",
+        "claude-3-opus": "gemini-3.1-pro-preview",
+        "sonnet": "gemini-3-flash-preview",
+        "claude-3-5-sonnet": "gemini-3-flash-preview",
+        "haiku": "gemini-2.5-flash-lite",
+        "claude-3-5-haiku": "gemini-2.5-flash-lite"
+      }
+    }
   };
 
   try {
@@ -114,6 +124,7 @@ function loadConfig(cwd) {
       parallelization,
       brave_search: get('brave_search') ?? defaults.brave_search,
       model_overrides: parsed.model_overrides || null,
+      model_mapping: parsed.model_mapping || defaults.model_mapping,
     };
   } catch {
     return defaults;
@@ -354,23 +365,41 @@ function getRoadmapPhaseInternal(cwd, phaseNum) {
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
 
-  // Future Phase 2: Add Gemini-specific model mapping here
-  if (isGeminiEnvironment()) {
-    // For now, fall back to standard behavior
-  }
-
-  // Check per-agent override first
+  // Determine base model through existing priority (model override -> profile fallback)
   const override = config.model_overrides?.[agentType];
+  let baseModel;
   if (override) {
-    return override === 'opus' ? 'inherit' : override;
+    baseModel = override;
+  } else {
+    const profile = config.model_profile || 'balanced';
+    const agentModels = MODEL_PROFILES[agentType];
+    if (!agentModels) {
+      baseModel = 'sonnet';
+    } else {
+      baseModel = agentModels[profile] || agentModels['balanced'] || 'sonnet';
+    }
   }
 
-  // Fall back to profile lookup
-  const profile = config.model_profile || 'balanced';
-  const agentModels = MODEL_PROFILES[agentType];
-  if (!agentModels) return 'sonnet';
-  const resolved = agentModels[profile] || agentModels['balanced'] || 'sonnet';
-  return resolved === 'opus' ? 'inherit' : resolved;
+  if (isGeminiEnvironment()) {
+    const mapping = config.model_mapping?.gemini || {};
+    const mappedModel = mapping[baseModel] || baseModel;
+
+    // Validate that the final model name starts with gemini-
+    if (!mappedModel.startsWith('gemini-')) {
+      throw new Error(`Resolved model '${mappedModel}' must start with 'gemini-' when GEMINI_CLI=1`);
+    }
+
+    // Output a one-time notification
+    if (mappedModel !== baseModel && !global.__gsd_gemini_notified) {
+      process.stderr.write(`Environment detected: gemini-cli. Mapping '${baseModel}' to '${mappedModel}'.\n`);
+      global.__gsd_gemini_notified = true;
+    }
+
+    return mappedModel;
+  }
+
+  // Outside Gemini, 'opus' resolves to 'inherit' for legacy reasons in GSD
+  return baseModel === 'opus' ? 'inherit' : baseModel;
 }
 
 // ─── Misc utilities ───────────────────────────────────────────────────────────

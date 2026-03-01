@@ -33,5 +33,15 @@
   "safety": {
     "always_confirm_destructive": true,
     "always_confirm_external_services": true
+  },
+  "model_mapping": {
+    "gemini": {
+      "opus": "gemini-3.1-pro-preview",
+      "claude-3-opus": "gemini-3.1-pro-preview",
+      "sonnet": "gemini-3-flash-preview",
+      "claude-3-5-sonnet": "gemini-3-flash-preview",
+      "haiku": "gemini-2.5-flash-lite",
+      "claude-3-5-haiku": "gemini-2.5-flash-lite"
+    }
   }
 }

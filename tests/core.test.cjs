@@ -125,14 +125,25 @@ describe('loadConfig', () => {
 
 describe('resolveModelInternal', () => {
   let tmpDir;
+  let originalGeminiCli;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
     fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    // Save and unset GEMINI_CLI for non-mapping tests
+    originalGeminiCli = process.env.GEMINI_CLI;
+    delete process.env.GEMINI_CLI;
+    delete global.__gsd_gemini_notified;
   });
 
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+    // Restore GEMINI_CLI
+    if (originalGeminiCli === undefined) {
+      delete process.env.GEMINI_CLI;
+    } else {
+      process.env.GEMINI_CLI = originalGeminiCli;
+    }
   });
 
   function writeConfig(obj) {
@@ -201,20 +212,6 @@ describe('resolveModelInternal', () => {
   });
 
   describe('Gemini environment mapping', () => {
-    let originalGeminiCli;
-
-    beforeEach(() => {
-      originalGeminiCli = process.env.GEMINI_CLI;
-    });
-
-    afterEach(() => {
-      if (originalGeminiCli === undefined) {
-        delete process.env.GEMINI_CLI;
-      } else {
-        process.env.GEMINI_CLI = originalGeminiCli;
-      }
-    });
-
     test('maps opus to gemini-3.1-pro-preview when GEMINI_CLI=1', () => {
       process.env.GEMINI_CLI = '1';
       writeConfig({ model_overrides: { 'gsd-executor': 'opus' } });

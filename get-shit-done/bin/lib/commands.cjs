@@ -379,7 +379,7 @@ async function cmdWebsearch(query, options, raw) {
   }
 }
 
-function cmdProgressRender(cwd, format, raw) {
+function cmdProgressRender(cwd, format, raw, options = {}) {
   const phasesDir = path.join(cwd, '.planning', 'phases');
   const roadmapPath = path.join(cwd, '.planning', 'ROADMAP.md');
   const milestone = getMilestoneInfo(cwd);
@@ -415,6 +415,15 @@ function cmdProgressRender(cwd, format, raw) {
 
   const percent = totalPlans > 0 ? Math.min(100, Math.round((totalSummaries / totalPlans) * 100)) : 0;
 
+  // Resolve models if requested
+  let agentModels = null;
+  if (options.models) {
+    agentModels = {};
+    for (const agent of Object.keys(MODEL_PROFILES)) {
+      agentModels[agent] = resolveModelInternal(cwd, agent);
+    }
+  }
+
   if (format === 'table') {
     // Render markdown table
     const barWidth = 10;
@@ -427,6 +436,16 @@ function cmdProgressRender(cwd, format, raw) {
     for (const p of phases) {
       out += `| ${p.number} | ${p.name} | ${p.summaries}/${p.plans} | ${p.status} |\n`;
     }
+
+    if (agentModels) {
+      out += `\n### Agent Model Mappings\n\n`;
+      out += `| Agent | Resolved Model |\n`;
+      out += `|-------|----------------|\n`;
+      for (const [agent, model] of Object.entries(agentModels)) {
+        out += `| ${agent} | ${model} |\n`;
+      }
+    }
+
     output({ rendered: out }, raw, out);
   } else if (format === 'bar') {
     const barWidth = 20;
@@ -436,14 +455,16 @@ function cmdProgressRender(cwd, format, raw) {
     output({ bar: text, percent, completed: totalSummaries, total: totalPlans }, raw, text);
   } else {
     // JSON format
-    output({
+    const res = {
       milestone_version: milestone.version,
       milestone_name: milestone.name,
       phases,
       total_plans: totalPlans,
       total_summaries: totalSummaries,
       percent,
-    }, raw);
+    };
+    if (agentModels) res.models = agentModels;
+    output(res, raw);
   }
 }
 

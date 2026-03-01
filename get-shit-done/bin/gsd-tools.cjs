@@ -56,7 +56,8 @@
  *   validate health [--repair]         Check .planning/ integrity, optionally repair
  *
  * Progress:
- *   progress [json|table|bar]          Render progress in various formats
+ *   progress [json|table|bar] [--models] Render progress in various formats
+ *   status [json|table|bar] [--models]   Alias for progress
  *
  * Todos:
  *   todo complete <filename>           Move todo from pending to completed
@@ -170,6 +171,13 @@ async function main() {
   if (rawIndex !== -1) args.splice(rawIndex, 1);
 
   const command = args[0];
+
+  if (args.includes('--help')) {
+    const content = fs.readFileSync(__filename, 'utf-8');
+    const header = content.match(/\/\*\*([\s\S]+?)\*\//)[1];
+    process.stdout.write(header.trim() + '\n');
+    process.exit(0);
+  }
 
   if (!command) {
     error('Usage: gsd-tools <command> [args] [--raw] [--cwd <path>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, init');
@@ -478,9 +486,14 @@ async function main() {
       break;
     }
 
+    case 'status':
     case 'progress': {
-      const subcommand = args[1] || 'json';
-      commands.cmdProgressRender(cwd, subcommand, raw);
+      let subcommand = 'json';
+      if (args[1] && !args[1].startsWith('--')) {
+        subcommand = args[1];
+      }
+      const models = args.includes('--models');
+      commands.cmdProgressRender(cwd, subcommand, raw, { models });
       break;
     }
 

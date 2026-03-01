@@ -29,4 +29,9 @@ Success criteria:
 2. `config.json` default profiles gracefully handle the mapped names.
 3. Unit/Integration tests for `model-profile-resolution` pass with the new mapping logic.
 
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 02-01-PLAN.md — Implement dynamic model mapping
+
 ---
