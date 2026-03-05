@@ -268,15 +268,25 @@ describe('resolveModelInternal', () => {
       assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-latest');
     });
 
-    test('logs warning and falls back for missing mapping', () => {
+    test('uses default mapping without warning when explicit mapping is null', () => {
       process.env.GEMINI_CLI = '1';
       writeConfig({
         gemini: { mappings: { opus: null } }
       });
       
-      // We need to capture console.warn or just ensure it doesn't crash and returns fallback
-      const result = resolveModelInternal(tmpDir, 'gsd-planner');
-      assert.strictEqual(result, 'gemini-3-flash-latest');
+      let warningCalled = false;
+      const originalWarn = console.warn;
+      console.warn = (msg) => {
+        if (msg.includes('Warning: Missing/invalid mapping')) warningCalled = true;
+      };
+
+      try {
+        const result = resolveModelInternal(tmpDir, 'gsd-planner');
+        assert.strictEqual(result, 'gemini-3-pro-latest');
+        assert.strictEqual(warningCalled, false);
+      } finally {
+        console.warn = originalWarn;
+      }
     });
   });
 
@@ -1025,6 +1035,54 @@ describe('syncGeminiSettings', () => {
     const planner = overrides.find(o => o.overrideScope === 'gsd-planner');
     assert.notStrictEqual(planner.modelName, 'old-model');
     assert.ok(planner.modelName.startsWith('gemini-'));
+  });
+
+  test('preserves user overrides missing overrideScope', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { modelName: 'custom-model' } // Missing overrideScope
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const overrides = settings.modelConfigs.overrides;
+    
+    // Override without scope preserved
+    assert.ok(overrides.find(o => o.modelName === 'custom-model' && !o.overrideScope));
+  });
+
+  test('preserves custom keys inside gsd- overrides', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { 
+            overrideScope: 'gsd-planner', 
+            modelName: 'old-model',
+            my_custom_setting: true 
+          }
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const overrides = settings.modelConfigs.overrides;
+    
+    const planner = overrides.find(o => o.overrideScope === 'gsd-planner');
+    assert.ok(planner);
+    assert.strictEqual(planner.my_custom_setting, true, 'Custom setting should be preserved');
+    assert.notStrictEqual(planner.modelName, 'old-model', 'Model name should be updated');
   });
 
   test('recovers from corrupt settings.json', () => {
