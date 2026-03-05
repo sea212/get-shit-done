@@ -4,7 +4,7 @@
 
 - [x] **Phase 1: Foundation & Config Logic** - Core model mapping and environment detection.
 - [x] **Phase 2: Settings Management & Propagation** - Automatic maintenance of `.gemini/settings.json`. (completed 2026-03-05)
-- [ ] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks.
+- [x] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks. (completed 2026-03-05)
 
 ## Phase Details
 
@@ -33,7 +33,7 @@
 - [ ] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
 
 - [x] **Phase 02.1: Correct agent model override semantics** - Update to nested structure and remove safety settings. (completed 2026-03-05)
-- [ ] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks.
+### Phase 3: Lifecycle Hooks & Sync
 **Goal**: Connect GSD to the Gemini CLI startup sequence using standard hooks.
 **Depends on**: Phase 02.1
 **Requirements**: GEM-04-01, GEM-04-02, GEM-04-03, GEM-07-02 (partial)
@@ -41,7 +41,9 @@
 1. A synchronization hook script (`hooks/gsd-gemini-sync.js`) exists and adheres to the Gemini CLI JSON protocol.
 2. GSD model profiles are automatically synced to the Gemini CLI configuration whenever the CLI starts.
 3. Errors in settings file access or hook execution are reported via `stderr` without breaking the CLI's JSON I/O.
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 03-01-PLAN.md — Implement the Gemini Sync Hook Script (completed 2026-03-05)
+- [x] 03-02-PLAN.md — Update Installer to Register Sync Hook (completed 2026-03-05)
 
 ## Progress Table
 
@@ -50,4 +52,4 @@
 | 1. Foundation & Config Logic | 1/1 | Completed | 2026-03-05 |
 | 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
 | 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
-| 3. Lifecycle Hooks & Sync | 0/0 | Not started | - |
+| 3. Lifecycle Hooks & Sync | 2/2 | Complete    | 2026-03-05 |
