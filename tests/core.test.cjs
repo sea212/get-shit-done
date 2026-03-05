@@ -277,6 +277,68 @@ describe('resolveModelInternal', () => {
       assert.strictEqual(result, 'gemini-3-flash-latest');
     });
   });
+
+  describe('lazy sync trigger', () => {
+    let originalEnv;
+    const { _resetSyncFlag } = require('../get-shit-done/bin/lib/core.cjs');
+
+    beforeEach(() => {
+      originalEnv = process.env.GEMINI_CLI;
+      if (typeof _resetSyncFlag === 'function') _resetSyncFlag();
+    });
+
+    afterEach(() => {
+      if (originalEnv === undefined) delete process.env.GEMINI_CLI;
+      else process.env.GEMINI_CLI = originalEnv;
+    });
+
+    test('triggers syncGeminiSettings when GEMINI_CLI=1', () => {
+      process.env.GEMINI_CLI = '1';
+      const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+      assert.strictEqual(fs.existsSync(settingsPath), false);
+
+      resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(fs.existsSync(settingsPath), true, 'settings.json should be created');
+    });
+
+    test('triggers sync only once', () => {
+      process.env.GEMINI_CLI = '1';
+      const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+      
+      resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(fs.existsSync(settingsPath), true);
+      
+      // Delete it to see if it gets recreated
+      fs.unlinkSync(settingsPath);
+      
+      resolveModelInternal(tmpDir, 'gsd-executor');
+      assert.strictEqual(fs.existsSync(settingsPath), false, 'should not sync again in same process');
+    });
+
+    test('respects skipSync option', () => {
+      process.env.GEMINI_CLI = '1';
+      const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+      
+      resolveModelInternal(tmpDir, 'gsd-planner', { skipSync: true });
+      assert.strictEqual(fs.existsSync(settingsPath), false, 'should skip sync when requested');
+    });
+
+    test('re-syncs after reset', () => {
+      if (typeof _resetSyncFlag !== 'function') return; // Skip if not implemented yet
+
+      process.env.GEMINI_CLI = '1';
+      const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+      
+      resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(fs.existsSync(settingsPath), true);
+      
+      fs.unlinkSync(settingsPath);
+      _resetSyncFlag();
+      
+      resolveModelInternal(tmpDir, 'gsd-executor');
+      assert.strictEqual(fs.existsSync(settingsPath), true, 'should sync again after flag reset');
+    });
+  });
 });
 
 // ─── getGeminiSafetySettings ───────────────────────────────────────────────────
