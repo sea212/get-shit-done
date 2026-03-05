@@ -442,13 +442,25 @@ function syncGeminiSettings(cwd) {
   let settings = { modelConfigs: { overrides: [] } };
 
   if (fs.existsSync(settingsPath)) {
-    try {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-      if (!settings.modelConfigs) settings.modelConfigs = { overrides: [] };
-      if (!Array.isArray(settings.modelConfigs.overrides)) settings.modelConfigs.overrides = [];
-    } catch {
-      // Recreate on parse failure
-      settings = { modelConfigs: { overrides: [] } };
+    const raw = fs.readFileSync(settingsPath, 'utf-8');
+    if (raw.trim() === '') {
+      // Empty file is fine, initialize it
+    } else {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          settings = parsed;
+          if (!settings.modelConfigs) settings.modelConfigs = { overrides: [] };
+          if (!Array.isArray(settings.modelConfigs.overrides)) settings.modelConfigs.overrides = [];
+        } else {
+          throw new Error('Not an object');
+        }
+      } catch (err) {
+        console.warn(`Warning: .gemini/settings.json is corrupt. Backing up and resetting. (${err.message})`);
+        const bakPath = settingsPath + '.bak-' + Date.now();
+        fs.renameSync(settingsPath, bakPath);
+        settings = { modelConfigs: { overrides: [] } };
+      }
     }
   }
 
