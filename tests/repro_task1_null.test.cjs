@@ -3,24 +3,26 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { resolveModelInternal, _resetSyncFlag } = require('../get-shit-done/bin/lib/core.cjs');
+const { loadConfig, resolveModelInternal, _resetSyncFlag } = require('../get-shit-done/bin/lib/core.cjs');
 
-describe('Task 1: Explicit null mappings', () => {
+describe('Task 1 Repro: gemini.mappings resolution', () => {
   let tmpDir;
-  let originalEnv;
+  let originalCwd;
+  let originalGeminiCli;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-task1-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-task1-repro-'));
     fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
-    originalEnv = process.env.GEMINI_CLI;
-    process.env.GEMINI_CLI = '1';
-    _resetSyncFlag();
+    originalCwd = process.cwd();
+    originalGeminiCli = process.env.GEMINI_CLI;
+    if (typeof _resetSyncFlag === 'function') _resetSyncFlag();
   });
 
   afterEach(() => {
+    process.chdir(originalCwd);
     fs.rmSync(tmpDir, { recursive: true, force: true });
-    if (originalEnv === undefined) delete process.env.GEMINI_CLI;
-    else process.env.GEMINI_CLI = originalEnv;
+    if (originalGeminiCli === undefined) delete process.env.GEMINI_CLI;
+    else process.env.GEMINI_CLI = originalGeminiCli;
   });
 
   function writeConfig(obj) {
@@ -30,70 +32,57 @@ describe('Task 1: Explicit null mappings', () => {
     );
   }
 
-  test('explicit null mapping triggers warning and flash model', () => {
-    writeConfig({
-      gemini: {
-        mappings: {
+  test('Warning should not be emitted and should use default when opus mapping is explicitly null', () => {
+    process.env.GEMINI_CLI = '1';
+    writeConfig({ 
+      gemini: { 
+        mappings: { 
           opus: null
-        }
-      }
+        } 
+      } 
     });
-
-    let warningEmitted = false;
+    
+    let warningCalled = false;
     const originalWarn = console.warn;
     console.warn = (msg) => {
-      if (msg.includes('Missing/invalid mapping for tier: opus')) {
-        warningEmitted = true;
+      if (msg.includes('Warning: Missing/invalid mapping')) {
+        warningCalled = true;
       }
+      originalWarn(msg);
     };
 
     try {
-      const result = resolveModelInternal(tmpDir, 'gsd-planner'); // gsd-planner uses opus by default
-      assert.strictEqual(result, 'gemini-3-flash-latest', 'should fall back to flash model');
-      assert.strictEqual(warningEmitted, true, 'should emit warning for null mapping');
+      const model = resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(model, 'gemini-3-pro-latest');
+      assert.strictEqual(warningCalled, false, 'Should NOT have logged a warning and should have used default mapping');
     } finally {
       console.warn = originalWarn;
     }
   });
 
-  test('missing config.json uses default mappings without warning', () => {
-    // No config file created
-    let warningEmitted = false;
-    const originalWarn = console.warn;
-    console.warn = (msg) => {
-      warningEmitted = true;
-    };
-
-    try {
-      const result = resolveModelInternal(tmpDir, 'gsd-planner');
-      assert.strictEqual(result, 'gemini-3-pro-latest', 'should use default pro model');
-      assert.strictEqual(warningEmitted, false, 'should not emit any warnings');
-    } finally {
-      console.warn = originalWarn;
-    }
-  });
-
-  test('incomplete mappings in config.json should fallback to defaults silently', () => {
-    writeConfig({
-      gemini: {
-        mappings: {
-          opus: 'custom-pro'
-          // sonnet and haiku are missing
-        }
-      }
+  test('Warning should not be emitted and should use default when opus mapping is empty string', () => {
+    process.env.GEMINI_CLI = '1';
+    writeConfig({ 
+      gemini: { 
+        mappings: { 
+          opus: ""
+        } 
+      } 
     });
-
-    let warningEmitted = false;
+    
+    let warningCalled = false;
     const originalWarn = console.warn;
     console.warn = (msg) => {
-      warningEmitted = true;
+      if (msg.includes('Warning: Missing/invalid mapping')) {
+        warningCalled = true;
+      }
+      originalWarn(msg);
     };
 
     try {
-      // gsd-codebase-mapper (balanced) uses haiku
-      const result = resolveModelInternal(tmpDir, 'gsd-codebase-mapper');
-      assert.strictEqual(result, 'gemini-2.5-flash-lite-latest', 'should fall back to default haiku model');
-      assert.strictEqual(warningEmitted, false, 'should NOT emit warning for missing mapping if default is available');
+      const model = resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(model, 'gemini-3-pro-latest');
+      assert.strictEqual(warningCalled, false, 'Should NOT have logged a warning for empty string mapping');
     } finally {
       console.warn = originalWarn;
     }

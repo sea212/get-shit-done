@@ -10,23 +10,29 @@ This document outlines the validation strategy for Phase 02, ensuring that model
 | GEM-03-01 | Create `.gemini/settings.json` if missing | Unit Test (tests/core.test.cjs) |
 | GEM-03-02 | Maintain `modelConfigs.overrides` section | Unit Test (tests/core.test.cjs) |
 | GEM-03-03 | Merge without overwriting user settings | Unit Test (tests/core.test.cjs) |
+| GEM-03-04 | Prevent recursion in model resolution | Unit Test (tests/phase-02-validation.test.cjs) |
 | GEM-05-01 | Update settings with agent mappings | Unit Test (tests/core.test.cjs) |
 | GEM-05-02 | Map Claude-tier models to Gemini | Unit Test (tests/core.test.cjs) |
+| GEM-05-03 | Propagate custom mappings to settings | Unit Test (tests/phase-02-validation.test.cjs) |
 
 ## Automated Tests
 
 ### Unit Tests
-The core logic for synchronization resides in `get-shit-done/bin/lib/core.cjs`. Tests are implemented in `tests/core.test.cjs`.
+The core logic for synchronization resides in `get-shit-done/bin/lib/core.cjs`. Tests are implemented in `tests/core.test.cjs` and `tests/phase-02-validation.test.cjs`.
 
-**Command:** `node tests/core.test.cjs`
+**Commands:**
+- `node tests/core.test.cjs`
+- `node tests/phase-02-validation.test.cjs`
 
 **Key Scenarios:**
-- **Initial Setup:** Verify `.gemini/settings.json` is created with correct defaults when absent.
+- **Initial Setup:** Verify `.gemini/settings.json` and its parent directory are created with correct defaults when absent.
 - **Merge Integrity:** Verify existing non-GSD overrides are preserved while GSD overrides are updated.
 - **Atomic Writes:** Verify that the file is not corrupted during the write process (simulated via file checks).
 - **Environment Gating:** Verify no sync occurs when `GEMINI_CLI !== '1'`.
 - **Lazy Trigger:** Verify `syncGeminiSettings` is called exactly once per process when models are resolved.
 - **Model Mapping:** Verify that Claude-tier aliases in GSD are correctly translated to Gemini model names in the settings file.
+- **Custom Mappings:** Verify that user-defined mappings in `config.json` correctly propagate to `.gemini/settings.json`.
+- **Recursion Safety:** Verify that the lazy sync trigger does not cause infinite recursion.
 
 ## Manual Verification (UAT)
 After automated tests pass, the following manual steps should be performed:
@@ -43,7 +49,8 @@ After automated tests pass, the following manual steps should be performed:
    - **Expected:** `my-custom-tool` override remains in the file.
 
 ## Success Criteria
-- [ ] All unit tests in `tests/core.test.cjs` pass.
-- [ ] `.gemini/settings.json` consistently reflects the active GSD model profile.
-- [ ] No recursive loops occur during model resolution.
-- [ ] User-defined settings are never lost.
+- [x] All unit tests in `tests/core.test.cjs` and `tests/phase-02-validation.test.cjs` pass.
+- [x] `.gemini/settings.json` consistently reflects the active GSD model profile.
+- [x] No recursive loops occur during model resolution (verified in `tests/phase-02-validation.test.cjs`).
+- [x] User-defined settings are never lost (verified in `tests/core.test.cjs`).
+- [x] Custom model mappings are propagated correctly (verified in `tests/phase-02-validation.test.cjs`).
