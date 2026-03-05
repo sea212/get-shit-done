@@ -474,19 +474,43 @@ function syncGeminiSettings(cwd) {
     }
   }
 
+  // Check for old structure: any override with top-level 'overrideScope'
+  const hasOldStructure = settings.modelConfigs.overrides.some(o => o.overrideScope && !o.match);
+
+  if (hasOldStructure) {
+    console.warn(`Warning: .gemini/settings.json uses an old structure. Backing up and migrating.`);
+    const bakPath = settingsPath + '.bak-' + Date.now();
+    fs.writeFileSync(bakPath, JSON.stringify(settings, null, 2), 'utf-8');
+
+    settings.modelConfigs.overrides = settings.modelConfigs.overrides.map(o => {
+      if (o.overrideScope && !o.match) {
+        const { overrideScope, modelName, safetySettings, ...extra } = o;
+        return {
+          match: { overrideScope },
+          modelConfig: {
+            model: modelName || extra.model, // fallback for safety
+            ...extra
+          }
+        };
+      }
+      return o;
+    });
+  }
+
   // Preserves existing user overrides where match.overrideScope does NOT start with gsd-
   // Also preserves overrides without an overrideScope (missing field)
   const userOverrides = settings.modelConfigs.overrides.filter(
-    o => !o.overrideScope || !o.overrideScope.startsWith('gsd-')
+    o => !o.match?.overrideScope || !o.match.overrideScope.startsWith('gsd-')
   );
 
   const gsdOverrides = Object.keys(MODEL_PROFILES).map(agent => {
-    const existing = settings.modelConfigs.overrides.find(o => o.overrideScope === agent);
+    const existing = settings.modelConfigs.overrides.find(o => o.match?.overrideScope === agent);
     return {
-      ...(existing || {}),
-      overrideScope: agent,
-      modelName: resolveModelInternal(cwd, agent, { skipSync: true }),
-      safetySettings: getGeminiSafetySettings(),
+      match: { overrideScope: agent },
+      modelConfig: {
+        ...(existing?.modelConfig || {}),
+        model: resolveModelInternal(cwd, agent, { skipSync: true }),
+      }
     };
   });
 
@@ -497,16 +521,6 @@ function syncGeminiSettings(cwd) {
   if (!fs.existsSync(geminiDir)) fs.mkdirSync(geminiDir, { recursive: true });
   fs.writeFileSync(tmpPath, JSON.stringify(settings, null, 2), 'utf-8');
   fs.renameSync(tmpPath, settingsPath);
-}
-
-function getGeminiSafetySettings() {
-  return [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
-  ];
 }
 
 // ─── Misc utilities ───────────────────────────────────────────────────────────
@@ -612,7 +626,6 @@ module.exports = {
   getArchivedPhaseDirs,
   getRoadmapPhaseInternal,
   resolveModelInternal,
-  getGeminiSafetySettings,
   pathExistsInternal,
   generateSlugInternal,
   getMilestoneInfo,

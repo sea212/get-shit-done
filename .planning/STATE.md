@@ -22,7 +22,7 @@ progress:
 
 | Milestone | Phase | Plan | Status | Progress |
 |-----------|-------|------|--------|----------|
-| 1. Gemini Integration | 2 | 02-01 | Completed | [▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░] 66% |
+| 1. Gemini Integration | 02.1 | - | Completed | [▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░] 75% |
 
 ## Performance Metrics
 
@@ -37,7 +37,7 @@ progress:
 ## Accumulated Context
 
 ### Roadmap Evolution
-- Phase 02.1 inserted after Phase 2: Fix critical sync bug (URGENT)
+- Phase 02.1 inserted after Phase 2: Correct agent model override semantics (URGENT)
 
 ### Critical Decisions
 - **Standardized Mapping**: Map Claude Opus/Sonnet/Haiku to Gemini Pro/Flash counterparts.

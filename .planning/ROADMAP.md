@@ -32,9 +32,10 @@
 - [ ] 02-01-PLAN.md — Implement syncGeminiSettings to automatically create and synchronize .gemini/settings.json
 - [ ] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
 
-### Phase 3: Lifecycle Hooks & Sync
+- [x] **Phase 02.1: Correct agent model override semantics** - Update to nested structure and remove safety settings. (completed 2026-03-05)
+- [ ] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks.
 **Goal**: Connect GSD to the Gemini CLI startup sequence using standard hooks.
-**Depends on**: Phase 2
+**Depends on**: Phase 02.1
 **Requirements**: GEM-04-01, GEM-04-02, GEM-04-03, GEM-07-02 (partial)
 **Success Criteria** (what must be TRUE):
 1. A synchronization hook script (`hooks/gsd-gemini-sync.js`) exists and adheres to the Gemini CLI JSON protocol.
@@ -48,4 +49,5 @@
 |-------|----------------|--------|-----------|
 | 1. Foundation & Config Logic | 1/1 | Completed | 2026-03-05 |
 | 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
+| 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
 | 3. Lifecycle Hooks & Sync | 0/0 | Not started | - |

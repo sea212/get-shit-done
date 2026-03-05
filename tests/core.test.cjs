@@ -351,20 +351,6 @@ describe('resolveModelInternal', () => {
   });
 });
 
-// ─── getGeminiSafetySettings ───────────────────────────────────────────────────
-
-describe('getGeminiSafetySettings', () => {
-  const { getGeminiSafetySettings } = require('../get-shit-done/bin/lib/core.cjs');
-
-  test('returns BLOCK_NONE for all categories', () => {
-    const settings = getGeminiSafetySettings();
-    assert.ok(Array.isArray(settings));
-    for (const s of settings) {
-      assert.strictEqual(s.threshold, 'BLOCK_NONE');
-    }
-  });
-});
-
 // ─── escapeRegex ───────────────────────────────────────────────────────────────
 
 describe('escapeRegex', () => {
@@ -990,7 +976,7 @@ describe('syncGeminiSettings', () => {
     assert.strictEqual(fs.existsSync(settingsPath), false);
   });
 
-  test('creates new settings.json if missing', () => {
+  test('creates new settings.json if missing with nested structure', () => {
     process.env.GEMINI_CLI = '1';
     syncGeminiSettings(tmpDir);
     const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
@@ -1000,18 +986,17 @@ describe('syncGeminiSettings', () => {
     assert.ok(settings.modelConfigs);
     assert.ok(Array.isArray(settings.modelConfigs.overrides));
     
-    // Should have all MODEL_PROFILES entries
-    const gsdOverrides = settings.modelConfigs.overrides.filter(o => o.overrideScope.startsWith('gsd-'));
+    // Should have all MODEL_PROFILES entries in nested structure
+    const gsdOverrides = settings.modelConfigs.overrides.filter(o => o.match?.overrideScope?.startsWith('gsd-'));
     assert.strictEqual(gsdOverrides.length, Object.keys(MODEL_PROFILES).length);
     
     // Check one entry structure
-    const planner = gsdOverrides.find(o => o.overrideScope === 'gsd-planner');
-    assert.ok(planner.modelName);
-    assert.ok(Array.isArray(planner.safetySettings));
-    assert.strictEqual(planner.safetySettings[0].threshold, 'BLOCK_NONE');
+    const planner = gsdOverrides.find(o => o.match.overrideScope === 'gsd-planner');
+    assert.ok(planner.modelConfig.model);
+    assert.strictEqual(planner.modelConfig.safetySettings, undefined, 'safetySettings should be removed by default');
   });
 
-  test('preserves user overrides', () => {
+  test('migrates old flat structure and backs it up', () => {
     process.env.GEMINI_CLI = '1';
     const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
     const existing = {
@@ -1026,48 +1011,33 @@ describe('syncGeminiSettings', () => {
     
     syncGeminiSettings(tmpDir);
     
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    const overrides = settings.modelConfigs.overrides;
-    
-    // User scope preserved
-    assert.ok(overrides.find(o => o.overrideScope === 'user-scope'));
-    // GSD planner updated
-    const planner = overrides.find(o => o.overrideScope === 'gsd-planner');
-    assert.notStrictEqual(planner.modelName, 'old-model');
-    assert.ok(planner.modelName.startsWith('gemini-'));
-  });
-
-  test('preserves user overrides missing overrideScope', () => {
-    process.env.GEMINI_CLI = '1';
-    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
-    const existing = {
-      modelConfigs: {
-        overrides: [
-          { modelName: 'custom-model' } // Missing overrideScope
-        ]
-      }
-    };
-    fs.writeFileSync(settingsPath, JSON.stringify(existing));
-    
-    syncGeminiSettings(tmpDir);
+    // Should have created a backup
+    const files = fs.readdirSync(path.join(tmpDir, '.gemini'));
+    assert.ok(files.some(f => f.startsWith('settings.json.bak-')));
     
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
     const overrides = settings.modelConfigs.overrides;
     
-    // Override without scope preserved
-    assert.ok(overrides.find(o => o.modelName === 'custom-model' && !o.overrideScope));
+    // User scope migrated
+    const user = overrides.find(o => o.match?.overrideScope === 'user-scope');
+    assert.ok(user);
+    assert.strictEqual(user.modelConfig.model, 'custom-model');
+    
+    // GSD planner migrated and updated
+    const planner = overrides.find(o => o.match?.overrideScope === 'gsd-planner');
+    assert.ok(planner);
+    assert.notStrictEqual(planner.modelConfig.model, 'old-model');
   });
 
-  test('preserves custom keys inside gsd- overrides', () => {
+  test('preserves user overrides in new structure', () => {
     process.env.GEMINI_CLI = '1';
     const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
     const existing = {
       modelConfigs: {
         overrides: [
           { 
-            overrideScope: 'gsd-planner', 
-            modelName: 'old-model',
-            my_custom_setting: true 
+            match: { overrideScope: 'user-scope' }, 
+            modelConfig: { model: 'custom-model' } 
           }
         ]
       }
@@ -1077,12 +1047,36 @@ describe('syncGeminiSettings', () => {
     syncGeminiSettings(tmpDir);
     
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    const overrides = settings.modelConfigs.overrides;
+    const user = settings.modelConfigs.overrides.find(o => o.match?.overrideScope === 'user-scope');
+    assert.ok(user);
+    assert.strictEqual(user.modelConfig.model, 'custom-model');
+  });
+
+  test('preserves extra fields in gsd- overrides', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { 
+            match: { overrideScope: 'gsd-planner' }, 
+            modelConfig: { 
+              model: 'old-model',
+              temperature: 0.5 
+            }
+          }
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
     
-    const planner = overrides.find(o => o.overrideScope === 'gsd-planner');
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const planner = settings.modelConfigs.overrides.find(o => o.match?.overrideScope === 'gsd-planner');
     assert.ok(planner);
-    assert.strictEqual(planner.my_custom_setting, true, 'Custom setting should be preserved');
-    assert.notStrictEqual(planner.modelName, 'old-model', 'Model name should be updated');
+    assert.strictEqual(planner.modelConfig.temperature, 0.5);
+    assert.notStrictEqual(planner.modelConfig.model, 'old-model');
   });
 
   test('recovers from corrupt settings.json', () => {
