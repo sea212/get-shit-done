@@ -2,8 +2,8 @@
 
 ## Phases
 
-- [ ] **Phase 1: Foundation & Config Logic** - Core model mapping and environment detection.
-- [ ] **Phase 2: Settings Management & Propagation** - Automatic maintenance of `.gemini/settings.json`.
+- [x] **Phase 1: Foundation & Config Logic** - Core model mapping and environment detection.
+- [x] **Phase 2: Settings Management & Propagation** - Automatic maintenance of `.gemini/settings.json`. (completed 2026-03-05)
 - [ ] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks.
 
 ## Phase Details
@@ -17,7 +17,8 @@
 2. User can override default mappings in `.planning/config.json`.
 3. GSD correctly identifies the `gemini-cli` environment and prioritizes Gemini models for all agents.
 4. Gemini safety settings are defaulted to `BLOCK_NONE` for all mapped models.
-**Plans**: TBD
+**Plans**: 
+- [x] 01-01: Implementation of core mapping logic and unit tests.
 
 ### Phase 2: Settings Management & Propagation
 **Goal**: Implement automatic creation and synchronization of the `.gemini/settings.json` file.
@@ -27,7 +28,9 @@
 1. GSD automatically creates `.gemini/settings.json` in the project root if it doesn't exist.
 2. Manual updates to GSD model profiles (via config or commands) are immediately propagated to `.gemini/settings.json`.
 3. Existing user-defined settings in `.gemini/settings.json` are preserved during GSD synchronization.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 02-01-PLAN.md — Implement syncGeminiSettings to automatically create and synchronize .gemini/settings.json
+- [ ] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
 
 ### Phase 3: Lifecycle Hooks & Sync
 **Goal**: Connect GSD to the Gemini CLI startup sequence using standard hooks.
@@ -43,6 +46,6 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Config Logic | 0/0 | Not started | - |
-| 2. Settings Management & Propagation | 0/0 | Not started | - |
+| 1. Foundation & Config Logic | 1/1 | Completed | 2026-03-05 |
+| 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
 | 3. Lifecycle Hooks & Sync | 0/0 | Not started | - |
