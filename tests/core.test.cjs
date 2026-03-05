@@ -26,6 +26,7 @@ const {
   getRoadmapPhaseInternal,
   searchPhaseInDir,
   findPhaseInternal,
+  syncGeminiSettings,
 } = require('../get-shit-done/bin/lib/core.cjs');
 
 // ─── loadConfig ────────────────────────────────────────────────────────────────
@@ -73,6 +74,26 @@ describe('loadConfig', () => {
     writeConfig({ planning: { commit_docs: false } });
     const config = loadConfig(tmpDir);
     assert.strictEqual(config.commit_docs, false);
+  });
+
+  test('returns gemini.mappings from defaults', () => {
+    const config = loadConfig(tmpDir);
+    assert.ok(config.gemini && typeof config.gemini === 'object');
+    assert.ok(config.gemini.mappings && typeof config.gemini.mappings === 'object');
+    assert.strictEqual(config.gemini.mappings.opus, 'gemini-3-pro-latest');
+  });
+
+  test('merges gemini.mappings from config.json', () => {
+    writeConfig({
+      gemini: {
+        mappings: {
+          opus: 'my-custom-model'
+        }
+      }
+    });
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.gemini.mappings.opus, 'my-custom-model');
+    assert.strictEqual(config.gemini.mappings.sonnet, 'gemini-3-flash-latest');
   });
 
   test('reads branching_strategy from git section', () => {
@@ -127,14 +148,19 @@ describe('loadConfig', () => {
 
 describe('resolveModelInternal', () => {
   let tmpDir;
+  let originalGeminiCli;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
     fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    originalGeminiCli = process.env.GEMINI_CLI;
+    process.env.GEMINI_CLI = '0';
   });
 
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+    if (originalGeminiCli === undefined) delete process.env.GEMINI_CLI;
+    else process.env.GEMINI_CLI = originalGeminiCli;
   });
 
   function writeConfig(obj) {
@@ -200,6 +226,70 @@ describe('resolveModelInternal', () => {
       // balanced profile, gsd-planner -> opus -> inherit
       assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'inherit');
     });
+  });
+
+  describe('Gemini interception', () => {
+    let originalEnv;
+
+    beforeEach(() => {
+      originalEnv = process.env.GEMINI_CLI;
+    });
+
+    afterEach(() => {
+      if (originalEnv === undefined) delete process.env.GEMINI_CLI;
+      else process.env.GEMINI_CLI = originalEnv;
+    });
+
+    test('behaves normally when GEMINI_CLI is not 1', () => {
+      process.env.GEMINI_CLI = '0';
+      writeConfig({ model_profile: 'balanced' });
+      // gsd-planner -> opus -> inherit
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'inherit');
+    });
+
+    test('maps to Gemini models when GEMINI_CLI is 1', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({ model_profile: 'balanced' });
+      // gsd-planner -> opus -> inherit -> mapped to gemini-3-pro-latest
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'gemini-3-pro-latest');
+
+      // gsd-codebase-mapper (balanced) -> haiku -> mapped to gemini-2.5-flash-lite-latest
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-codebase-mapper'), 'gemini-2.5-flash-lite-latest');
+    });
+
+    test('resolves specific model strings via inclusion', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({
+        model_overrides: { 'gsd-executor': 'claude-3-5-sonnet-20240620' }
+      });
+      // sonnet included -> mapped to gemini-3-flash-latest
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-latest');
+    });
+
+    test('logs warning and falls back for missing mapping', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({
+        gemini: { mappings: { opus: null } }
+      });
+      
+      // We need to capture console.warn or just ensure it doesn't crash and returns fallback
+      const result = resolveModelInternal(tmpDir, 'gsd-planner');
+      assert.strictEqual(result, 'gemini-3-flash-latest');
+    });
+  });
+});
+
+// ─── getGeminiSafetySettings ───────────────────────────────────────────────────
+
+describe('getGeminiSafetySettings', () => {
+  const { getGeminiSafetySettings } = require('../get-shit-done/bin/lib/core.cjs');
+
+  test('returns BLOCK_NONE for all categories', () => {
+    const settings = getGeminiSafetySettings();
+    assert.ok(Array.isArray(settings));
+    for (const s of settings) {
+      assert.strictEqual(s.threshold, 'BLOCK_NONE');
+    }
   });
 });
 
@@ -800,5 +890,90 @@ describe('getMilestonePhaseFilter', () => {
 
     const filter = getMilestonePhaseFilter(tmpDir);
     assert.strictEqual(filter.phaseCount, 0);
+  });
+});
+
+// ─── syncGeminiSettings ────────────────────────────────────────────────────────
+
+describe('syncGeminiSettings', () => {
+  let tmpDir;
+  let originalGeminiCli;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-sync-test-'));
+    fs.mkdirSync(path.join(tmpDir, '.gemini'), { recursive: true });
+    originalGeminiCli = process.env.GEMINI_CLI;
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    if (originalGeminiCli === undefined) delete process.env.GEMINI_CLI;
+    else process.env.GEMINI_CLI = originalGeminiCli;
+  });
+
+  test('does nothing if GEMINI_CLI is not 1', () => {
+    process.env.GEMINI_CLI = '0';
+    syncGeminiSettings(tmpDir);
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    assert.strictEqual(fs.existsSync(settingsPath), false);
+  });
+
+  test('creates new settings.json if missing', () => {
+    process.env.GEMINI_CLI = '1';
+    syncGeminiSettings(tmpDir);
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    assert.strictEqual(fs.existsSync(settingsPath), true);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    assert.ok(settings.modelConfigs);
+    assert.ok(Array.isArray(settings.modelConfigs.overrides));
+    
+    // Should have all MODEL_PROFILES entries
+    const gsdOverrides = settings.modelConfigs.overrides.filter(o => o.overrideScope.startsWith('gsd-'));
+    assert.strictEqual(gsdOverrides.length, Object.keys(MODEL_PROFILES).length);
+    
+    // Check one entry structure
+    const planner = gsdOverrides.find(o => o.overrideScope === 'gsd-planner');
+    assert.ok(planner.modelName);
+    assert.ok(Array.isArray(planner.safetySettings));
+    assert.strictEqual(planner.safetySettings[0].threshold, 'BLOCK_NONE');
+  });
+
+  test('preserves user overrides', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { overrideScope: 'user-scope', modelName: 'custom-model' },
+          { overrideScope: 'gsd-planner', modelName: 'old-model' }
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const overrides = settings.modelConfigs.overrides;
+    
+    // User scope preserved
+    assert.ok(overrides.find(o => o.overrideScope === 'user-scope'));
+    // GSD planner updated
+    const planner = overrides.find(o => o.overrideScope === 'gsd-planner');
+    assert.notStrictEqual(planner.modelName, 'old-model');
+    assert.ok(planner.modelName.startsWith('gemini-'));
+  });
+
+  test('recovers from corrupt settings.json', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    fs.writeFileSync(settingsPath, 'corrupt json {');
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    assert.ok(settings.modelConfigs);
+    assert.ok(Array.isArray(settings.modelConfigs.overrides));
   });
 });
