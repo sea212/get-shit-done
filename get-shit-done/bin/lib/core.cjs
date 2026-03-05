@@ -119,7 +119,12 @@ function loadConfig(cwd) {
     })();
 
     const gemini = {
-      mappings: { ...defaults.gemini.mappings, ...(parsed.gemini?.mappings || {}) },
+      ...defaults.gemini,
+      ...(parsed.gemini || {}),
+      mappings: {
+        ...defaults.gemini.mappings,
+        ...(parsed.gemini?.mappings || {}),
+      },
     };
 
     return {
@@ -420,13 +425,18 @@ function resolveModelInternal(cwd, agentType, options = {}) {
 
     if (tier) {
       const mapped = config.gemini?.mappings?.[tier];
-      if (mapped === null) {
+      if (mapped) return mapped;
+
+      const defaultValue = DEFAULT_GEMINI_MAPPINGS[tier];
+      if (defaultValue) return defaultValue;
+
+      // Only warn if the mapping is truly missing/invalid and no default exists
+      if (mapped === null || mapped === '') {
         console.warn(`Warning: Missing/invalid mapping for tier: ${tier}. Falling back to gemini-3-flash-latest.`);
         return 'gemini-3-flash-latest';
       }
-      if (mapped) return mapped;
 
-      return DEFAULT_GEMINI_MAPPINGS[tier];
+      return 'gemini-3-flash-latest';
     }
   }
 
@@ -465,12 +475,15 @@ function syncGeminiSettings(cwd) {
   }
 
   // Preserves existing user overrides where match.overrideScope does NOT start with gsd-
+  // Also preserves overrides without an overrideScope (missing field)
   const userOverrides = settings.modelConfigs.overrides.filter(
-    o => o.overrideScope && !o.overrideScope.startsWith('gsd-')
+    o => !o.overrideScope || !o.overrideScope.startsWith('gsd-')
   );
 
   const gsdOverrides = Object.keys(MODEL_PROFILES).map(agent => {
+    const existing = settings.modelConfigs.overrides.find(o => o.overrideScope === agent);
     return {
+      ...(existing || {}),
       overrideScope: agent,
       modelName: resolveModelInternal(cwd, agent, { skipSync: true }),
       safetySettings: getGeminiSafetySettings(),
