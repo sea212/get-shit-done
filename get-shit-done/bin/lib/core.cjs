@@ -30,6 +30,12 @@ const MODEL_PROFILES = {
   'gsd-nyquist-auditor':      { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
 };
 
+const DEFAULT_GEMINI_MAPPINGS = {
+  opus: 'gemini-3-pro-latest',
+  sonnet: 'gemini-3-flash-latest',
+  haiku: 'gemini-2.5-flash-lite-latest',
+};
+
 // ─── Output helpers ───────────────────────────────────────────────────────────
 
 function output(result, raw, rawValue) {
@@ -80,6 +86,9 @@ function loadConfig(cwd) {
     nyquist_validation: true,
     parallelization: true,
     brave_search: false,
+    gemini: {
+      mappings: DEFAULT_GEMINI_MAPPINGS,
+    },
   };
 
   try {
@@ -109,6 +118,13 @@ function loadConfig(cwd) {
       return defaults.parallelization;
     })();
 
+    const gemini = {
+      mappings: {
+        ...DEFAULT_GEMINI_MAPPINGS,
+        ...(parsed.gemini?.mappings || {}),
+      },
+    };
+
     return {
       model_profile: get('model_profile') ?? defaults.model_profile,
       commit_docs: get('commit_docs', { section: 'planning', field: 'commit_docs' }) ?? defaults.commit_docs,
@@ -123,6 +139,7 @@ function loadConfig(cwd) {
       parallelization,
       brave_search: get('brave_search') ?? defaults.brave_search,
       model_overrides: parsed.model_overrides || null,
+      gemini,
     };
   } catch {
     return defaults;
@@ -364,21 +381,94 @@ function getRoadmapPhaseInternal(cwd, phaseNum) {
   }
 }
 
-function resolveModelInternal(cwd, agentType) {
+function resolveModelInternal(cwd, agentType, options = {}) {
   const config = loadConfig(cwd);
 
   // Check per-agent override first
   const override = config.model_overrides?.[agentType];
+  let resolved;
   if (override) {
-    return override === 'opus' ? 'inherit' : override;
+    resolved = override === 'opus' ? 'inherit' : override;
+  } else {
+    // Fall back to profile lookup
+    const profile = config.model_profile || 'balanced';
+    const agentModels = MODEL_PROFILES[agentType];
+    if (!agentModels) {
+      resolved = 'sonnet';
+    } else {
+      const profileModel = agentModels[profile] || agentModels['balanced'] || 'sonnet';
+      resolved = profileModel === 'opus' ? 'inherit' : profileModel;
+    }
   }
 
-  // Fall back to profile lookup
-  const profile = config.model_profile || 'balanced';
-  const agentModels = MODEL_PROFILES[agentType];
-  if (!agentModels) return 'sonnet';
-  const resolved = agentModels[profile] || agentModels['balanced'] || 'sonnet';
-  return resolved === 'opus' ? 'inherit' : resolved;
+  // Intercept for Gemini if environment variable is set
+  if (process.env.GEMINI_CLI === '1') {
+    let tier = null;
+    if (resolved === 'inherit' || resolved.includes('opus')) tier = 'opus';
+    else if (resolved.includes('sonnet')) tier = 'sonnet';
+    else if (resolved.includes('haiku')) tier = 'haiku';
+
+    if (tier) {
+      const mapped = config.gemini?.mappings?.[tier];
+      if (mapped) return mapped;
+
+      console.warn(`Warning: Missing/invalid mapping for tier: ${tier}. Falling back to gemini-3-flash-latest.`);
+      return 'gemini-3-flash-latest';
+    }
+  }
+
+  return resolved;
+}
+
+function syncGeminiSettings(cwd) {
+  if (process.env.GEMINI_CLI !== '1') return;
+
+  const geminiDir = path.join(cwd, '.gemini');
+  const settingsPath = path.join(geminiDir, 'settings.json');
+
+  let settings = { modelConfigs: { overrides: [] } };
+
+  if (fs.existsSync(settingsPath)) {
+    try {
+      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+      if (!settings.modelConfigs) settings.modelConfigs = { overrides: [] };
+      if (!Array.isArray(settings.modelConfigs.overrides)) settings.modelConfigs.overrides = [];
+    } catch {
+      // Recreate on parse failure
+      settings = { modelConfigs: { overrides: [] } };
+    }
+  }
+
+  // Preserves existing user overrides where match.overrideScope does NOT start with gsd-
+  const userOverrides = settings.modelConfigs.overrides.filter(
+    o => o.overrideScope && !o.overrideScope.startsWith('gsd-')
+  );
+
+  const gsdOverrides = Object.keys(MODEL_PROFILES).map(agent => {
+    return {
+      overrideScope: agent,
+      modelName: resolveModelInternal(cwd, agent, { skipSync: true }),
+      safetySettings: getGeminiSafetySettings(),
+    };
+  });
+
+  settings.modelConfigs.overrides = [...userOverrides, ...gsdOverrides];
+
+  // Atomic write
+  const tmpPath = settingsPath + '.tmp-' + Date.now();
+  if (!fs.existsSync(geminiDir)) fs.mkdirSync(geminiDir, { recursive: true });
+  fs.writeFileSync(tmpPath, JSON.stringify(settings, null, 2), 'utf-8');
+  fs.renameSync(tmpPath, settingsPath);
+}
+
+function getGeminiSafetySettings() {
+  return [
+    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+  ];
 }
 
 // ─── Misc utilities ───────────────────────────────────────────────────────────
@@ -484,9 +574,11 @@ module.exports = {
   getArchivedPhaseDirs,
   getRoadmapPhaseInternal,
   resolveModelInternal,
+  getGeminiSafetySettings,
   pathExistsInternal,
   generateSlugInternal,
   getMilestoneInfo,
   getMilestonePhaseFilter,
   toPosixPath,
+  syncGeminiSettings,
 };
