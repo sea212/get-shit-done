@@ -119,10 +119,7 @@ function loadConfig(cwd) {
     })();
 
     const gemini = {
-      mappings: {
-        ...DEFAULT_GEMINI_MAPPINGS,
-        ...(parsed.gemini?.mappings || {}),
-      },
+      mappings: { ...defaults.gemini.mappings, ...(parsed.gemini?.mappings || {}) },
     };
 
     return {
@@ -423,10 +420,13 @@ function resolveModelInternal(cwd, agentType, options = {}) {
 
     if (tier) {
       const mapped = config.gemini?.mappings?.[tier];
+      if (mapped === null) {
+        console.warn(`Warning: Missing/invalid mapping for tier: ${tier}. Falling back to gemini-3-flash-latest.`);
+        return 'gemini-3-flash-latest';
+      }
       if (mapped) return mapped;
 
-      console.warn(`Warning: Missing/invalid mapping for tier: ${tier}. Falling back to gemini-3-flash-latest.`);
-      return 'gemini-3-flash-latest';
+      return DEFAULT_GEMINI_MAPPINGS[tier];
     }
   }
 
