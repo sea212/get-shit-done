@@ -53,7 +53,7 @@ describe('Task 1 Repro: gemini.mappings resolution', () => {
 
     try {
       const model = resolveModelInternal(tmpDir, 'gsd-planner');
-      assert.strictEqual(model, 'gemini-3-pro-latest');
+      assert.strictEqual(model, 'gemini-3.1-pro-preview');
       assert.strictEqual(warningCalled, false, 'Should NOT have logged a warning and should have used default mapping');
     } finally {
       console.warn = originalWarn;
@@ -81,7 +81,7 @@ describe('Task 1 Repro: gemini.mappings resolution', () => {
 
     try {
       const model = resolveModelInternal(tmpDir, 'gsd-planner');
-      assert.strictEqual(model, 'gemini-3-pro-latest');
+      assert.strictEqual(model, 'gemini-3.1-pro-preview');
       assert.strictEqual(warningCalled, false, 'Should NOT have logged a warning for empty string mapping');
     } finally {
       console.warn = originalWarn;

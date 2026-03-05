@@ -3,9 +3,9 @@
 ## v1 Requirements
 
 ### GEM-01: Model Tier Mapping
-- [x] **GEM-01-01**: Map "opus" to "gemini-3-pro-latest" (or configurable stable version).
-- [x] **GEM-01-02**: Map "sonnet" to "gemini-3-flash-latest" (or configurable stable version).
-- [x] **GEM-01-03**: Map "haiku" to "gemini-2.5-flash-lite-latest" (or configurable stable version).
+- [x] **GEM-01-01**: Map "opus" to "gemini-3.1-pro-preview" (or configurable stable version).
+- [x] **GEM-01-02**: Map "sonnet" to "gemini-3-flash-preview" (or configurable stable version).
+- [x] **GEM-01-03**: Map "haiku" to "gemini-2.5-flash-lite" (or configurable stable version).
 
 ### GEM-02: Environment Detection
 - [x] **GEM-02-01**: Detect if `GEMINI_CLI=1` is set in the environment.

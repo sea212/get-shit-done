@@ -44,7 +44,7 @@ score: 5/5 must-haves verified
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | ----------- | ---------- | ----------- | ------ | -------- |
-| GEM-01-02 | Phase 1/2 | Map "sonnet" to Gemini | ✓ SATISFIED | `DEFAULT_GEMINI_MAPPINGS.sonnet` is 'gemini-3-flash-latest'. |
+| GEM-01-02 | Phase 1/2 | Map "sonnet" to Gemini | ✓ SATISFIED | `DEFAULT_GEMINI_MAPPINGS.sonnet` is 'gemini-3-flash-preview'. |
 | GEM-03-01 | 02-01-PLAN | Create .gemini/settings.json | ✓ SATISFIED | `syncGeminiSettings` creates file if missing. |
 | GEM-03-03 | 02-01-PLAN | Merge correctly | ✓ SATISFIED | Filter logic preserves non-gsd overrides. |
 | GEM-05-01 | 02-02-PLAN | Update on override | ✓ SATISFIED | Triggered in `resolveModelInternal`. |

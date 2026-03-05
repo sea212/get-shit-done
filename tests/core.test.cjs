@@ -80,7 +80,7 @@ describe('loadConfig', () => {
     const config = loadConfig(tmpDir);
     assert.ok(config.gemini && typeof config.gemini === 'object');
     assert.ok(config.gemini.mappings && typeof config.gemini.mappings === 'object');
-    assert.strictEqual(config.gemini.mappings.opus, 'gemini-3-pro-latest');
+    assert.strictEqual(config.gemini.mappings.opus, 'gemini-3.1-pro-preview');
   });
 
   test('merges gemini.mappings from config.json', () => {
@@ -93,7 +93,7 @@ describe('loadConfig', () => {
     });
     const config = loadConfig(tmpDir);
     assert.strictEqual(config.gemini.mappings.opus, 'my-custom-model');
-    assert.strictEqual(config.gemini.mappings.sonnet, 'gemini-3-flash-latest');
+    assert.strictEqual(config.gemini.mappings.sonnet, 'gemini-3-flash-preview');
   });
 
   test('reads branching_strategy from git section', () => {
@@ -252,11 +252,11 @@ describe('resolveModelInternal', () => {
     test('maps to Gemini models when GEMINI_CLI is 1', () => {
       process.env.GEMINI_CLI = '1';
       writeConfig({ model_profile: 'balanced' });
-      // gsd-planner -> opus -> inherit -> mapped to gemini-3-pro-latest
-      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'gemini-3-pro-latest');
+      // gsd-planner -> opus -> inherit -> mapped to gemini-3.1-pro-preview
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-planner'), 'gemini-3.1-pro-preview');
 
-      // gsd-codebase-mapper (balanced) -> haiku -> mapped to gemini-2.5-flash-lite-latest
-      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-codebase-mapper'), 'gemini-2.5-flash-lite-latest');
+      // gsd-codebase-mapper (balanced) -> haiku -> mapped to gemini-2.5-flash-lite
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-codebase-mapper'), 'gemini-2.5-flash-lite');
     });
 
     test('resolves specific model strings via inclusion', () => {
@@ -264,8 +264,8 @@ describe('resolveModelInternal', () => {
       writeConfig({
         model_overrides: { 'gsd-executor': 'claude-3-5-sonnet-20240620' }
       });
-      // sonnet included -> mapped to gemini-3-flash-latest
-      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-latest');
+      // sonnet included -> mapped to gemini-3-flash-preview
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3-flash-preview');
     });
 
     test('uses default mapping without warning when explicit mapping is null', () => {
@@ -282,7 +282,7 @@ describe('resolveModelInternal', () => {
 
       try {
         const result = resolveModelInternal(tmpDir, 'gsd-planner');
-        assert.strictEqual(result, 'gemini-3-pro-latest');
+        assert.strictEqual(result, 'gemini-3.1-pro-preview');
         assert.strictEqual(warningCalled, false);
       } finally {
         console.warn = originalWarn;

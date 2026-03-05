@@ -16,14 +16,14 @@ This phase establishes the foundational mapping logic between Claude-defined tie
 ### Locked Decisions
 - **Environment Activation**: Gemini mode is activated strictly via the `GEMINI_CLI=1` environment variable. If not set, GSD defaults to standard Claude-based resolution.
 - **Default Tier Mappings**:
-  - `opus` → `gemini-3-pro-latest`
-  - `sonnet` → `gemini-3-flash-latest`
-  - `haiku` → `gemini-2.5-flash-lite-latest`
+  - `opus` → `gemini-3.1-pro-preview`
+  - `sonnet` → `gemini-3-flash-preview`
+  - `haiku` → `gemini-2.5-flash-lite`
 - **Config Schema**:
   - Add a `gemini` section to `.planning/config.json`.
   - Nested `mappings` key allows overriding specific tiers for Gemini mode only.
 - **Override Priority**:
-  - If a user has an explicit Claude model override (e.g., `claude-3-opus-20240229`) in `.planning/config.json`, and `GEMINI_CLI=1` is set, GSD will map the **tier** of that override to the corresponding Gemini model (e.g., `gemini-3-pro-latest`).
+  - If a user has an explicit Claude model override (e.g., `claude-3-opus-20240229`) in `.planning/config.json`, and `GEMINI_CLI=1` is set, GSD will map the **tier** of that override to the corresponding Gemini model (e.g., `gemini-3.1-pro-preview`).
 - **Safety Defaults**:
   - All Gemini model resolutions will have `BLOCK_NONE` safety settings applied by default (to be handled in Phase 2/3 sync, but the logic should exist in Phase 1).
 
@@ -42,9 +42,9 @@ This phase establishes the foundational mapping logic between Claude-defined tie
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| GEM-01-01 | Map "opus" to "gemini-3-pro-latest" | Verified mapping in `01-CONTEXT.md` and logic location in `core.cjs`. |
-| GEM-01-02 | Map "sonnet" to "gemini-3-flash-latest" | Verified mapping in `01-CONTEXT.md`. |
-| GEM-01-03 | Map "haiku" to "gemini-2.5-flash-lite-latest" | Verified mapping in `01-CONTEXT.md`. |
+| GEM-01-01 | Map "opus" to "gemini-3.1-pro-preview" | Verified mapping in `01-CONTEXT.md` and logic location in `core.cjs`. |
+| GEM-01-02 | Map "sonnet" to "gemini-3-flash-preview" | Verified mapping in `01-CONTEXT.md`. |
+| GEM-01-03 | Map "haiku" to "gemini-2.5-flash-lite" | Verified mapping in `01-CONTEXT.md`. |
 | GEM-02-01 | Detect if `GEMINI_CLI=1` is set | Environment variable detection is standard in `core.cjs`. |
 | GEM-02-02 | Prioritize Gemini mappings if `GEMINI_CLI=1` | Logic identified for `resolveModelInternal`. |
 | GEM-06-01 | Custom mapping support in `.planning/config.json` | Schema identified: `gemini.mappings` in `loadConfig`. |
@@ -88,15 +88,15 @@ Store the default Gemini mappings in a constant object within `core.cjs`.
 
 ```javascript
 const GEMINI_DEFAULT_MAPPINGS = {
-  'opus': 'gemini-3-pro-latest',
-  'sonnet': 'gemini-3-flash-latest',
-  'haiku': 'gemini-2.5-flash-lite-latest'
+  'opus': 'gemini-3.1-pro-preview',
+  'sonnet': 'gemini-3-flash-preview',
+  'haiku': 'gemini-2.5-flash-lite'
 };
 ```
 
 ### Anti-Patterns to Avoid
 - **Implicit Activation:** Never activate Gemini mappings unless `GEMINI_CLI=1` is explicitly set.
-- **Deep Model Extraction:** Avoid trying to parse tier information from complex custom Claude model strings (e.g., `claude-3-5-sonnet-20241022`) using regex. If it's not a standard tier string, fallback to a safe default (like `sonnet` -> `gemini-3-flash-latest`).
+- **Deep Model Extraction:** Avoid trying to parse tier information from complex custom Claude model strings (e.g., `claude-3-5-sonnet-20241022`) using regex. If it's not a standard tier string, fallback to a safe default (like `sonnet` -> `gemini-3-flash-preview`).
 
 ## Don't Hand-Roll
 
