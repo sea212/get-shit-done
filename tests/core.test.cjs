@@ -149,12 +149,14 @@ describe('loadConfig', () => {
 describe('resolveModelInternal', () => {
   let tmpDir;
   let originalGeminiCli;
+  const { _resetSyncFlag } = require('../get-shit-done/bin/lib/core.cjs');
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
     fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
     originalGeminiCli = process.env.GEMINI_CLI;
     process.env.GEMINI_CLI = '0';
+    if (typeof _resetSyncFlag === 'function') _resetSyncFlag();
   });
 
   afterEach(() => {
@@ -280,11 +282,9 @@ describe('resolveModelInternal', () => {
 
   describe('lazy sync trigger', () => {
     let originalEnv;
-    const { _resetSyncFlag } = require('../get-shit-done/bin/lib/core.cjs');
 
     beforeEach(() => {
       originalEnv = process.env.GEMINI_CLI;
-      if (typeof _resetSyncFlag === 'function') _resetSyncFlag();
     });
 
     afterEach(() => {

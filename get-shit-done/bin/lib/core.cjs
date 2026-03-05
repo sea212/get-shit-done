@@ -381,7 +381,20 @@ function getRoadmapPhaseInternal(cwd, phaseNum) {
   }
 }
 
+let hasSynced = false;
+
+/** Internal helper to reset the sync flag for testing. */
+function _resetSyncFlag() {
+  hasSynced = false;
+}
+
 function resolveModelInternal(cwd, agentType, options = {}) {
+  // Trigger lazy sync if Gemini is active
+  if (process.env.GEMINI_CLI === '1' && !options.skipSync && !hasSynced) {
+    syncGeminiSettings(cwd);
+    hasSynced = true;
+  }
+
   const config = loadConfig(cwd);
 
   // Check per-agent override first
@@ -581,4 +594,5 @@ module.exports = {
   getMilestonePhaseFilter,
   toPosixPath,
   syncGeminiSettings,
+  _resetSyncFlag,
 };
