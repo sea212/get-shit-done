@@ -1437,7 +1437,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   // 4. Remove GSD hooks
   const hooksDir = path.join(targetDir, 'hooks');
   if (fs.existsSync(hooksDir)) {
-    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js'];
+    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js', 'gsd-gemini-sync.js'];
     let hookCount = 0;
     for (const hook of gsdHooks) {
       const hookPath = path.join(hooksDir, hook);
@@ -1489,7 +1489,7 @@ function uninstall(isGlobal, runtime = 'claude') {
         if (entry.hooks && Array.isArray(entry.hooks)) {
           // Filter out GSD hooks
           const hasGsdHook = entry.hooks.some(h =>
-            h.command && (h.command.includes('gsd-check-update') || h.command.includes('gsd-statusline'))
+            h.command && (h.command.includes('gsd-check-update') || h.command.includes('gsd-statusline') || h.command.includes('gsd-gemini-sync'))
           );
           return !hasGsdHook;
         }
@@ -2192,6 +2192,30 @@ function install(isGlobal, runtime = 'claude') {
     if (!settings.experimental.enableAgents) {
       settings.experimental.enableAgents = true;
       console.log(`  ${green}✓${reset} Enabled experimental agents`);
+    }
+
+    // Configure Gemini sync hook
+    const geminiSyncCommand = isGlobal
+      ? buildHookCommand(targetDir, 'gsd-gemini-sync.js')
+      : 'node ' + dirName + '/hooks/gsd-gemini-sync.js';
+
+    if (!settings.hooks) settings.hooks = {};
+    if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+
+    const hasGeminiSyncHook = settings.hooks.SessionStart.some(entry =>
+      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('gsd-gemini-sync'))
+    );
+
+    if (!hasGeminiSyncHook) {
+      settings.hooks.SessionStart.push({
+        hooks: [
+          {
+            type: 'command',
+            command: geminiSyncCommand
+          }
+        ]
+      });
+      console.log(`  ${green}✓${reset} Configured Gemini sync hook`);
     }
   }
 
