@@ -440,20 +440,7 @@ function getRoadmapPhaseInternal(cwd, phaseNum) {
   }
 }
 
-let hasSynced = false;
-
-/** Internal helper to reset the sync flag for testing. */
-function _resetSyncFlag() {
-  hasSynced = false;
-}
-
 function resolveModelInternal(cwd, agentType, options = {}) {
-  // Trigger lazy sync if Gemini is active
-  if ((process.env.GEMINI_CLI === '1' || options.forceGemini) && !options.skipSync && !hasSynced) {
-    syncGeminiSettings(cwd);
-    hasSynced = true;
-  }
-
   const config = loadConfig(cwd);
 
   // Check per-agent override first
@@ -498,90 +485,6 @@ function resolveModelInternal(cwd, agentType, options = {}) {
   }
 
   return resolved;
-}
-
-function syncGeminiSettings(cwd, options = {}) {
-  if (process.env.GEMINI_CLI !== '1' && !options.force) return;
-
-  const geminiDir = path.join(cwd, '.gemini');
-  const settingsPath = path.join(geminiDir, 'settings.json');
-
-  let settings = { modelConfigs: { overrides: [] } };
-
-  if (fs.existsSync(settingsPath)) {
-    const raw = fs.readFileSync(settingsPath, 'utf-8');
-    if (raw.trim() === '') {
-      // Empty file is fine, initialize it
-    } else {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') {
-          settings = parsed;
-          if (!settings.modelConfigs) settings.modelConfigs = { overrides: [] };
-          if (!Array.isArray(settings.modelConfigs.overrides)) settings.modelConfigs.overrides = [];
-        } else {
-          throw new Error('Not an object');
-        }
-      } catch (err) {
-        console.warn(`Warning: .gemini/settings.json is corrupt. Backing up and resetting. (${err.message})`);
-        const bakPath = settingsPath + '.bak-' + Date.now();
-        fs.renameSync(settingsPath, bakPath);
-        settings = { modelConfigs: { overrides: [] } };
-      }
-    }
-  }
-
-  // Check for old structure: any override lacking a 'match' property but having old-style fields
-  const hasOldStructure = settings.modelConfigs.overrides.some(o => !o.match && (o.overrideScope || o.overridePath || o.modelName || o.model));
-
-  if (hasOldStructure) {
-    console.warn(`Warning: .gemini/settings.json uses an old structure. Backing up and migrating.`);
-    const bakPath = settingsPath + '.bak-' + Date.now();
-    fs.writeFileSync(bakPath, JSON.stringify(settings, null, 2), 'utf-8');
-
-    settings.modelConfigs.overrides = settings.modelConfigs.overrides.map(o => {
-      if (!o.match && (o.overrideScope || o.overridePath || o.modelName || o.model)) {
-        const { overrideScope, overridePath, modelName, model, safetySettings, ...extra } = o;
-        const match = {};
-        if (overrideScope) match.overrideScope = overrideScope;
-        if (overridePath) match.overridePath = overridePath;
-
-        return {
-          match,
-          modelConfig: {
-            model: modelName || model,
-            ...extra
-          }
-        };
-      }
-      return o;
-    });
-  }
-
-  // Preserves existing user overrides where match.overrideScope does NOT start with gsd-
-  // Also preserves overrides without an overrideScope (missing field)
-  const userOverrides = settings.modelConfigs.overrides.filter(
-    o => !o.match?.overrideScope || !o.match.overrideScope.startsWith('gsd-')
-  );
-
-  const gsdOverrides = Object.keys(MODEL_PROFILES).map(agent => {
-    const existing = settings.modelConfigs.overrides.find(o => o.match?.overrideScope === agent);
-    return {
-      match: { overrideScope: agent },
-      modelConfig: {
-        ...(existing?.modelConfig || {}),
-        model: resolveModelInternal(cwd, agent, { skipSync: true, forceGemini: !!options.force }),
-      }
-    };
-  });
-
-  settings.modelConfigs.overrides = [...userOverrides, ...gsdOverrides];
-
-  // Atomic write
-  const tmpPath = settingsPath + '.tmp-' + Date.now();
-  if (!fs.existsSync(geminiDir)) fs.mkdirSync(geminiDir, { recursive: true });
-  fs.writeFileSync(tmpPath, JSON.stringify(settings, null, 2), 'utf-8');
-  fs.renameSync(tmpPath, settingsPath);
 }
 
 // ─── Misc utilities ───────────────────────────────────────────────────────────
@@ -692,6 +595,4 @@ module.exports = {
   getMilestoneInfo,
   getMilestonePhaseFilter,
   toPosixPath,
-  syncGeminiSettings,
-  _resetSyncFlag,
 };

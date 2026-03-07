@@ -73,5 +73,11 @@ progress:
 ### Active Context
 - The "Gemini Model Integration" project is now complete. All phases and requirements have been met and verified.
 
+## Quick Tasks Completed
+
+| Task ID | Description | Completed At |
+|---------|-------------|--------------|
+| abandon-settings-json | Abandon local settings.json model overrides in favor of BeforeModel hook | 2026-03-07 |
+
 ---
 *Last updated: 2026-03-07*
