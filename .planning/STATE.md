@@ -50,9 +50,6 @@ progress:
 - **JSON Hooks**: Use the standard Gemini CLI hook protocol for synchronization.
 - **Safety Settings**: Default to `BLOCK_NONE` for all categories when using Gemini to match GSD's permissive standard for coding tasks.
 - **Test Isolation**: Explicitly disable `GEMINI_CLI` in standard `core.cjs` tests to prevent environment leakage and ensure isolation.
-- **Atomic Writes**: Use temp file + rename for `.gemini/settings.json` durability.
-- **GSD Prefix**: Prefix managed overrides with `gsd-` in `.gemini/settings.json`.
-- **Force Flag Bypass**: Use a `force` flag in `syncGeminiSettings` to allow the lifecycle hook to run even if `GEMINI_CLI=1` is not in its environment.
 - **Template Defaults**: Load base defaults from `templates/config.json` in `loadConfig` to ensure all required settings are populated if not overridden.
 - **Dynamic Injection**: Use `BeforeModel` hook to inject model overrides on-the-fly, bypassing session reload limitations.
 
