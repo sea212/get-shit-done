@@ -397,9 +397,12 @@ function resolveModelInternal(cwd, agentType, options = {}) {
     const profile = config.model_profile || 'balanced';
     const agentModels = MODEL_PROFILES[agentType];
     if (!agentModels) {
-      resolved = 'sonnet';
+      throw new Error(`Unknown agent type: ${agentType}`);
     } else {
-      const profileModel = agentModels[profile] || agentModels['balanced'] || 'sonnet';
+      const profileModel = agentModels[profile] || agentModels['balanced'];
+      if (!profileModel) {
+        throw new Error(`Missing profile '${profile}' or 'balanced' for agent: ${agentType}`);
+      }
       resolved = profileModel === 'opus' ? 'inherit' : profileModel;
     }
   }
@@ -418,13 +421,7 @@ function resolveModelInternal(cwd, agentType, options = {}) {
       const defaultValue = DEFAULT_GEMINI_MAPPINGS[tier];
       if (defaultValue) return defaultValue;
 
-      // Only warn if the mapping is truly missing/invalid and no default exists
-      if (mapped === null || mapped === '') {
-        console.warn(`Warning: Missing/invalid mapping for tier: ${tier}. Falling back to gemini-3-flash-preview.`);
-        return 'gemini-3-flash-preview';
-      }
-
-      return 'gemini-3-flash-preview';
+      throw new Error(`Missing mapping for Gemini tier: ${tier}`);
     }
   }
 

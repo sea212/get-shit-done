@@ -215,9 +215,11 @@ describe('resolveModelInternal', () => {
   });
 
   describe('edge cases', () => {
-    test('returns sonnet for unknown agent type', () => {
+    test('throws error for unknown agent type with no override', () => {
       writeConfig({ model_profile: 'balanced' });
-      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-nonexistent'), 'sonnet');
+      assert.throws(() => {
+        resolveModelInternal(tmpDir, 'gsd-nonexistent');
+      }, /Unknown agent type: gsd-nonexistent/);
     });
 
     test('defaults to balanced profile when model_profile missing', () => {
