@@ -18,8 +18,8 @@
 
 ### GEM-04: Startup Synchronization (Hooks)
 - [ ] **GEM-04-01**: Implement a `hooks/gsd-gemini-sync.js` script to handle Gemini CLI lifecycle events.
-- [ ] **GEM-04-02**: The hook must trigger a synchronization of GSD model profiles to `.gemini/settings.json`.
-- [ ] **GEM-04-03**: The hook must follow the Gemini CLI JSON protocol (stdin/stdout).
+- [x] **GEM-04-02**: The hook must trigger a synchronization of GSD model profiles to `.gemini/settings.json`.
+- [x] **GEM-04-03**: The hook must follow the Gemini CLI JSON protocol (stdin/stdout).
 
 ### GEM-05: Override Propagation
 - [ ] **GEM-05-01**: Whenever a GSD agent's model is overridden (e.g., via `/gsd:set-profile` or `.planning/config.json`), update `.gemini/settings.json`.
@@ -53,8 +53,8 @@
 | GEM-03-02 | Phase 2 | Pending |
 | GEM-03-03 | Phase 2 | Pending |
 | GEM-04-01 | Phase 3 | Pending |
-| GEM-04-02 | Phase 3 | Pending |
-| GEM-04-03 | Phase 3 | Pending |
+| GEM-04-02 | Phase 3 | Complete |
+| GEM-04-03 | Phase 3 | Complete |
 | GEM-05-01 | Phase 2 | Pending |
 | GEM-05-02 | Phase 2 | Pending |
 | GEM-06-01 | Phase 1 | Completed |

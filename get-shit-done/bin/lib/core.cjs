@@ -449,7 +449,7 @@ function _resetSyncFlag() {
 
 function resolveModelInternal(cwd, agentType, options = {}) {
   // Trigger lazy sync if Gemini is active
-  if (process.env.GEMINI_CLI === '1' && !options.skipSync && !hasSynced) {
+  if ((process.env.GEMINI_CLI === '1' || options.forceGemini) && !options.skipSync && !hasSynced) {
     syncGeminiSettings(cwd);
     hasSynced = true;
   }
@@ -474,7 +474,7 @@ function resolveModelInternal(cwd, agentType, options = {}) {
   }
 
   // Intercept for Gemini if environment variable is set
-  if (process.env.GEMINI_CLI === '1') {
+  if (process.env.GEMINI_CLI === '1' || options.forceGemini) {
     let tier = null;
     if (resolved === 'inherit' || resolved.includes('opus')) tier = 'opus';
     else if (resolved.includes('sonnet')) tier = 'sonnet';
@@ -566,7 +566,7 @@ function syncGeminiSettings(cwd, options = {}) {
       match: { overrideScope: agent },
       modelConfig: {
         ...(existing?.modelConfig || {}),
-        model: resolveModelInternal(cwd, agent, { skipSync: true }),
+        model: resolveModelInternal(cwd, agent, { skipSync: true, forceGemini: !!options.force }),
       }
     };
   });

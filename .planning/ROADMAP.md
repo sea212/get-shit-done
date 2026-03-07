@@ -5,6 +5,7 @@
 - [x] **Phase 1: Foundation & Config Logic** - Core model mapping and environment detection.
 - [x] **Phase 2: Settings Management & Propagation** - Automatic maintenance of `.gemini/settings.json`. (completed 2026-03-05)
 - [x] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks. (completed 2026-03-05)
+- [x] **Phase 4: Fix Gemini Model Mapping Bug** - Fix incorrect model mapping in `syncGeminiSettings`. (completed 2026-03-07)
 
 ## Phase Details
 
@@ -47,6 +48,16 @@
 - [x] 03-03-PLAN.md — Fix hook script distribution in build process (gap closure) (completed 2026-03-07)
 - [x] 03-04-PLAN.md — Fix config synchronization and bypass guard in hook (gap closure) (completed 2026-03-07)
 
+### Phase 4: Fix Gemini Model Mapping Bug
+**Goal**: Ensure that `syncGeminiSettings` correctly maps models to Gemini equivalents even when triggered via the startup hook without `GEMINI_CLI=1` set.
+**Depends on**: Phase 3
+**Requirements**: GEM-08-01
+**Success Criteria** (what must be TRUE):
+1. `syncGeminiSettings` produces correct Gemini model names (e.g., `gemini-3.1-pro-preview`) in `.gemini/settings.json`.
+2. The `gsd-gemini-sync.js` hook correctly updates the settings file with Gemini models when executed by the Gemini CLI.
+**Plans**: 
+- [x] 04-01-PLAN.md — Fix model resolution logic in syncGeminiSettings (completed 2026-03-07)
+
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
@@ -55,3 +66,4 @@
 | 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
 | 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
 | 3. Lifecycle Hooks & Sync | 4/4 | Completed | 2026-03-07 |
+| 4. Fix Gemini Model Mapping Bug | 1/1 | Completed | 2026-03-07 |
