@@ -1090,4 +1090,48 @@ describe('syncGeminiSettings', () => {
     assert.ok(settings.modelConfigs);
     assert.ok(Array.isArray(settings.modelConfigs.overrides));
   });
+
+  test('migrates old structure with overridePath', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { overridePath: 'some/path', modelName: 'custom-model' }
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const overrides = settings.modelConfigs.overrides;
+    
+    const migrated = overrides.find(o => o.match?.overridePath === 'some/path');
+    assert.ok(migrated, 'Should have migrated overridePath');
+    assert.strictEqual(migrated.modelConfig.model, 'custom-model');
+  });
+
+  test('migrates old structure with modelName at root (no scope/path)', () => {
+    process.env.GEMINI_CLI = '1';
+    const settingsPath = path.join(tmpDir, '.gemini', 'settings.json');
+    const existing = {
+      modelConfigs: {
+        overrides: [
+          { modelName: 'global-override' }
+        ]
+      }
+    };
+    fs.writeFileSync(settingsPath, JSON.stringify(existing));
+    
+    syncGeminiSettings(tmpDir);
+    
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    const overrides = settings.modelConfigs.overrides;
+    
+    const migrated = overrides.find(o => o.match && Object.keys(o.match).length === 0);
+    assert.ok(migrated, 'Should have migrated global override (empty match)');
+    assert.strictEqual(migrated.modelConfig.model, 'global-override');
+  });
 });

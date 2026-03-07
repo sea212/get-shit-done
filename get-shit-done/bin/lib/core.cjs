@@ -531,8 +531,8 @@ function syncGeminiSettings(cwd, options = {}) {
     }
   }
 
-  // Check for old structure: any override with top-level 'overrideScope'
-  const hasOldStructure = settings.modelConfigs.overrides.some(o => o.overrideScope && !o.match);
+  // Check for old structure: any override lacking a 'match' property but having old-style fields
+  const hasOldStructure = settings.modelConfigs.overrides.some(o => !o.match && (o.overrideScope || o.overridePath || o.modelName || o.model));
 
   if (hasOldStructure) {
     console.warn(`Warning: .gemini/settings.json uses an old structure. Backing up and migrating.`);
@@ -540,12 +540,16 @@ function syncGeminiSettings(cwd, options = {}) {
     fs.writeFileSync(bakPath, JSON.stringify(settings, null, 2), 'utf-8');
 
     settings.modelConfigs.overrides = settings.modelConfigs.overrides.map(o => {
-      if (o.overrideScope && !o.match) {
-        const { overrideScope, modelName, safetySettings, ...extra } = o;
+      if (!o.match && (o.overrideScope || o.overridePath || o.modelName || o.model)) {
+        const { overrideScope, overridePath, modelName, model, safetySettings, ...extra } = o;
+        const match = {};
+        if (overrideScope) match.overrideScope = overrideScope;
+        if (overridePath) match.overridePath = overridePath;
+
         return {
-          match: { overrideScope },
+          match,
           modelConfig: {
-            model: modelName || extra.model, // fallback for safety
+            model: modelName || model,
             ...extra
           }
         };
