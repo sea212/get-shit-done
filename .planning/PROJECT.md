@@ -16,15 +16,16 @@ Enable seamless use of GSD with Gemini models by automatically managing model co
 - ✓ Support for Claude model profiles (Opus, Sonnet, Haiku) — existing
 - ✓ Planning workflow (Research, Roadmap, Requirements, State) — existing
 - ✓ Subagent system for specialized tasks (gsd-planner, gsd-executor, etc.) — existing
+- ✓ **GEM-01**: Map Claude model tiers (Opus, Sonnet, Haiku) to Gemini models (Gemini 1.5 Pro, Gemini 1.5 Flash, etc.) by default.
+- ✓ **GEM-02**: Detect `gemini-cli` environment (via `$GEMINI_CLI=1`) and prioritize Gemini models.
+- ✓ **GEM-03**: Automatically create and maintain `.gemini/settings.json` within the project directory.
+- ✓ **GEM-04**: Implement `gemini-cli` hooks to synchronize model profiles on startup.
+- ✓ **GEM-05**: Synchronize Per-Agent Overrides from `model-profiles.md` (or GSD config) to `.gemini/settings.json` and via `BeforeModel` hooks.
+- ✓ **GEM-06**: Allow customization of the default Opus/Sonnet/Haiku to Gemini model mappings.
 
 ### Active
 
-- [ ] **GEM-01**: Map Claude model tiers (Opus, Sonnet, Haiku) to Gemini models (Gemini 3 Pro, Gemini 3 Flash, Gemini 2.5 Pro) by default.
-- [ ] **GEM-02**: Detect `gemini-cli` environment (via `$GEMINI_CLI=1`) and prioritize Gemini models.
-- [ ] **GEM-03**: Automatically create and maintain `.gemini/settings.json` within the project directory.
-- [ ] **GEM-04**: Implement `gemini-cli` hooks to synchronize model profiles on startup.
-- [ ] **GEM-05**: Synchronize Per-Agent Overrides from `model-profiles.md` (or GSD config) to `.gemini/settings.json`.
-- [ ] **GEM-06**: Allow customization of the default Opus/Sonnet/Haiku to Gemini model mappings.
+- (None. All requirements for this milestone are completed.)
 
 ### Out of Scope
 
@@ -49,9 +50,10 @@ Enable seamless use of GSD with Gemini models by automatically managing model co
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Use `gemini-cli` hooks | Requested by user for automatic startup sync. | — Pending |
-| Automatic sync of overrides | Ensure `.gemini/settings.json` is always up to date with GSD settings. | — Pending |
-| Customizable mappings | Mappings (Opus -> Gemini 3 Pro, etc.) are defaults but can be overridden. | — Pending |
+| Use `gemini-cli` hooks | Requested by user for automatic startup sync. | ✓ Implemented `gsd-gemini-sync.js` |
+| Automatic sync of overrides | Ensure `.gemini/settings.json` is always up to date with GSD settings. | ✓ Implemented in `syncGeminiSettings` |
+| Customizable mappings | Mappings are defaults but can be overridden in `config.json`. | ✓ Implemented in `loadConfig` |
+| Use `BeforeModel` Hook | Overcome session reload limitations for dynamic model injection. | ✓ Implemented `gsd-gemini-before-model.js` |
 
 ---
-*Last updated: 2026-03-05 after initialization*
+*Last updated: 2026-03-07 after Phase 05 completion*

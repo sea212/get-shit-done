@@ -8,8 +8,10 @@ const HOOK_PATH = path.resolve(__dirname, '../hooks/gsd-gemini-before-model.js')
 
 test('BeforeModel Hook: parses JSON and injects model', (t) => {
   const input = JSON.stringify({
-    model_request: {
-      agent_type: 'gsd-planner',
+    llm_request: {
+      config: {
+        overrideScope: 'gsd-planner'
+      },
       model: 'claude-3-opus-20240229'
     }
   });
@@ -22,15 +24,17 @@ test('BeforeModel Hook: parses JSON and injects model', (t) => {
 
   assert.strictEqual(result.status, 0, 'Hook should exit with 0');
   const output = JSON.parse(result.stdout);
-  assert.ok(output.model_request, 'Output should have model_request');
-  // Since we don't have the implementation yet, this will fail
-  assert.ok(output.model_request.model.includes('gemini'), 'Model should be mapped to gemini');
+  assert.ok(output.hookSpecificOutput, 'Output should have hookSpecificOutput');
+  assert.ok(output.hookSpecificOutput.llm_request, 'Output should have llm_request');
+  assert.ok(output.hookSpecificOutput.llm_request.model.includes('gemini'), 'Model should be mapped to gemini');
 });
 
 test('BeforeModel Hook: handles missing cwd gracefully', (t) => {
   const input = JSON.stringify({
-    model_request: {
-      agent_type: 'gsd-executor'
+    llm_request: {
+      config: {
+        overrideScope: 'gsd-executor'
+      }
     }
   });
 
@@ -42,7 +46,7 @@ test('BeforeModel Hook: handles missing cwd gracefully', (t) => {
 
   assert.strictEqual(result.status, 0);
   const output = JSON.parse(result.stdout);
-  assert.ok(output.model_request.model, 'Model should be resolved');
+  assert.ok(output.hookSpecificOutput.llm_request.model, 'Model should be resolved');
 });
 
 test('BeforeModel Hook: fails safe on malformed JSON', (t) => {
@@ -53,12 +57,6 @@ test('BeforeModel Hook: fails safe on malformed JSON', (t) => {
     encoding: 'utf-8'
   });
 
-  // It should probably just output the input or an error, but not crash.
-  // Standard gemini-cli hook protocol expects JSON back if successful.
-  // If it's malformed, it should probably exit with error or return it as-is?
-  // Actually, Task 3 says "Ignores non-JSON/malformed stdin and does not crash (fails safe)".
-  // If it fails safe, maybe it outputs nothing or the original input?
-  // Let's assume it should not crash and exit with 0 or non-zero but not crash.
   assert.ok(result.stderr.includes('Error') || result.status !== 0, 'Should log error or exit non-zero');
 });
 

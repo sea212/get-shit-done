@@ -30,9 +30,13 @@
 1. GSD automatically creates `.gemini/settings.json` in the project root if it doesn't exist.
 2. Manual updates to GSD model profiles (via config or commands) are immediately propagated to `.gemini/settings.json`.
 3. Existing user-defined settings in `.gemini/settings.json` are preserved during GSD synchronization.
-**Plans**: 4 plans
-- [ ] 02-01-PLAN.md — Implement syncGeminiSettings to automatically create and synchronize .gemini/settings.json
-- [ ] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
+**Plans**: 6 plans
+- [x] 02-01-PLAN.md — Implement syncGeminiSettings to automatically create and synchronize .gemini/settings.json
+- [x] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
+- [x] 02-03-PLAN.md — Handle configuration merging for existing .gemini/settings.json
+- [x] 02-04-PLAN.md — Fix model mapping for Opus tier to use gemini-1.5-pro-preview-0514
+- [x] 02-05-PLAN.md — Standardize safety settings to BLOCK_NONE for all Gemini models
+- [x] 02-06-PLAN.md — Fix agent override mapping in settings.json to match gemini-cli nested structure
 
 - [x] **Phase 02.1: Correct agent model override semantics** - Update to nested structure and remove safety settings. (completed 2026-03-05)
 ### Phase 3: Lifecycle Hooks & Sync
@@ -77,7 +81,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Config Logic | 1/1 | Completed | 2026-03-05 |
-| 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
+| 2. Settings Management & Propagation | 6/6 | Completed | 2026-03-05 |
 | 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
 | 3. Lifecycle Hooks & Sync | 4/4 | Completed | 2026-03-07 |
 | 4. Fix Gemini Model Mapping Bug | 1/1 | Completed | 2026-03-07 |
