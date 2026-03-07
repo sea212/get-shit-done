@@ -73,7 +73,7 @@ function safeReadFile(filePath) {
 
 function loadConfig(cwd) {
   const configPath = path.join(cwd, '.planning', 'config.json');
-  const defaults = {
+  let defaults = {
     model_profile: 'balanced',
     commit_docs: true,
     search_gitignored: false,
@@ -89,7 +89,64 @@ function loadConfig(cwd) {
     gemini: {
       mappings: DEFAULT_GEMINI_MAPPINGS,
     },
+    model_overrides: null,
   };
+
+  // Merge template defaults if they exist
+  try {
+    const templatePath = path.join(__dirname, '../../templates/config.json');
+    if (fs.existsSync(templatePath)) {
+      const templateRaw = fs.readFileSync(templatePath, 'utf-8');
+      const templateConfig = JSON.parse(templateRaw);
+
+      const getT = (key, nested) => {
+        if (templateConfig[key] !== undefined) return templateConfig[key];
+        if (nested && templateConfig[nested.section] && templateConfig[nested.section][nested.field] !== undefined) {
+          return templateConfig[nested.section][nested.field];
+        }
+        return undefined;
+      };
+
+      const templateParallelization = (() => {
+        const val = getT('parallelization');
+        if (typeof val === 'boolean') return val;
+        if (typeof val === 'object' && val !== null && 'enabled' in val) return val.enabled;
+        return undefined;
+      })();
+
+      const templateGemini = templateConfig.gemini ? {
+        ...defaults.gemini,
+        ...templateConfig.gemini,
+        mappings: {
+          ...defaults.gemini.mappings,
+          ...(templateConfig.gemini.mappings || {}),
+        },
+      } : undefined;
+
+      const templateDefaults = {
+        model_profile: getT('model_profile'),
+        commit_docs: getT('commit_docs', { section: 'planning', field: 'commit_docs' }),
+        search_gitignored: getT('search_gitignored', { section: 'planning', field: 'search_gitignored' }),
+        branching_strategy: getT('branching_strategy', { section: 'git', field: 'branching_strategy' }),
+        phase_branch_template: getT('phase_branch_template', { section: 'git', field: 'phase_branch_template' }),
+        milestone_branch_template: getT('milestone_branch_template', { section: 'git', field: 'milestone_branch_template' }),
+        research: getT('research', { section: 'workflow', field: 'research' }),
+        plan_checker: getT('plan_checker', { section: 'workflow', field: 'plan_check' }),
+        verifier: getT('verifier', { section: 'workflow', field: 'verifier' }),
+        nyquist_validation: getT('nyquist_validation', { section: 'workflow', field: 'nyquist_validation' }),
+        parallelization: templateParallelization,
+        brave_search: getT('brave_search'),
+        model_overrides: templateConfig.model_overrides,
+        gemini: templateGemini,
+      };
+
+      for (const key in templateDefaults) {
+        if (templateDefaults[key] !== undefined) {
+          defaults[key] = templateDefaults[key];
+        }
+      }
+    }
+  } catch {}
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8');
@@ -443,8 +500,8 @@ function resolveModelInternal(cwd, agentType, options = {}) {
   return resolved;
 }
 
-function syncGeminiSettings(cwd) {
-  if (process.env.GEMINI_CLI !== '1') return;
+function syncGeminiSettings(cwd, options = {}) {
+  if (process.env.GEMINI_CLI !== '1' && !options.force) return;
 
   const geminiDir = path.join(cwd, '.gemini');
   const settingsPath = path.join(geminiDir, 'settings.json');
