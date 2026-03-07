@@ -1437,7 +1437,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   // 4. Remove GSD hooks
   const hooksDir = path.join(targetDir, 'hooks');
   if (fs.existsSync(hooksDir)) {
-    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js', 'gsd-gemini-sync.js'];
+    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js', 'gsd-gemini-sync.js', 'gsd-gemini-before-model.js'];
     let hookCount = 0;
     for (const hook of gsdHooks) {
       const hookPath = path.join(hooksDir, hook);
@@ -1482,46 +1482,38 @@ function uninstall(isGlobal, runtime = 'claude') {
       console.log(`  ${green}✓${reset} Removed GSD statusline from settings`);
     }
 
-    // Remove GSD hooks from SessionStart
-    if (settings.hooks && settings.hooks.SessionStart) {
-      const before = settings.hooks.SessionStart.length;
-      settings.hooks.SessionStart = settings.hooks.SessionStart.filter(entry => {
-        if (entry.hooks && Array.isArray(entry.hooks)) {
-          // Filter out GSD hooks
-          const hasGsdHook = entry.hooks.some(h =>
-            h.command && (h.command.includes('gsd-check-update') || h.command.includes('gsd-statusline') || h.command.includes('gsd-gemini-sync'))
-          );
-          return !hasGsdHook;
-        }
-        return true;
-      });
-      if (settings.hooks.SessionStart.length < before) {
-        settingsModified = true;
-        console.log(`  ${green}✓${reset} Removed GSD hooks from settings`);
-      }
-      // Clean up empty array
-      if (settings.hooks.SessionStart.length === 0) {
-        delete settings.hooks.SessionStart;
-      }
-    }
+    // Remove GSD hooks from settings.hooks (SessionStart, BeforeModel, AfterTool, PostToolUse)
+    if (settings.hooks) {
+      const gsdHookPatterns = [
+        'gsd-check-update',
+        'gsd-statusline',
+        'gsd-gemini-sync',
+        'gsd-gemini-before-model',
+        'gsd-context-monitor'
+      ];
 
-    // Remove GSD hooks from PostToolUse and AfterTool (Gemini uses AfterTool)
-    for (const eventName of ['PostToolUse', 'AfterTool']) {
-      if (settings.hooks && settings.hooks[eventName]) {
-        const before = settings.hooks[eventName].length;
-        settings.hooks[eventName] = settings.hooks[eventName].filter(entry => {
+      for (const eventName of Object.keys(settings.hooks)) {
+        const hookEntries = settings.hooks[eventName];
+        if (!Array.isArray(hookEntries)) continue;
+
+        const before = hookEntries.length;
+        settings.hooks[eventName] = hookEntries.filter(entry => {
           if (entry.hooks && Array.isArray(entry.hooks)) {
+            // Filter out entries that contain GSD hooks
             const hasGsdHook = entry.hooks.some(h =>
-              h.command && h.command.includes('gsd-context-monitor')
+              h.command && gsdHookPatterns.some(p => h.command.includes(p))
             );
             return !hasGsdHook;
           }
           return true;
         });
+
         if (settings.hooks[eventName].length < before) {
           settingsModified = true;
-          console.log(`  ${green}✓${reset} Removed context monitor hook from settings`);
+          console.log(`  ${green}✓${reset} Removed GSD hooks from ${eventName} in settings`);
         }
+
+        // Clean up empty array
         if (settings.hooks[eventName].length === 0) {
           delete settings.hooks[eventName];
         }
@@ -2216,6 +2208,29 @@ function install(isGlobal, runtime = 'claude') {
         ]
       });
       console.log(`  ${green}✓${reset} Configured Gemini sync hook`);
+    }
+
+    // Configure BeforeModel hook for dynamic model injection
+    const geminiBeforeModelCommand = isGlobal
+      ? buildHookCommand(targetDir, 'gsd-gemini-before-model.js')
+      : 'node ' + dirName + '/hooks/gsd-gemini-before-model.js';
+
+    if (!settings.hooks.BeforeModel) settings.hooks.BeforeModel = [];
+
+    const hasGeminiBeforeModelHook = settings.hooks.BeforeModel.some(entry =>
+      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('gsd-gemini-before-model'))
+    );
+
+    if (!hasGeminiBeforeModelHook) {
+      settings.hooks.BeforeModel.push({
+        hooks: [
+          {
+            type: 'command',
+            command: geminiBeforeModelCommand
+          }
+        ]
+      });
+      console.log(`  ${green}✓${reset} Configured Gemini dynamic model injection hook`);
     }
   }
 
