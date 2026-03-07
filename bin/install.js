@@ -1437,7 +1437,7 @@ function uninstall(isGlobal, runtime = 'claude') {
   // 4. Remove GSD hooks
   const hooksDir = path.join(targetDir, 'hooks');
   if (fs.existsSync(hooksDir)) {
-    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js', 'gsd-gemini-before-model.js'];
+    const gsdHooks = ['gsd-statusline.js', 'gsd-check-update.js', 'gsd-check-update.sh', 'gsd-context-monitor.js', 'gsd-gemini-subagent-model.js'];
     let hookCount = 0;
     for (const hook of gsdHooks) {
       const hookPath = path.join(hooksDir, hook);
@@ -1487,7 +1487,7 @@ function uninstall(isGlobal, runtime = 'claude') {
       const gsdHookPatterns = [
         'gsd-check-update',
         'gsd-statusline',
-        'gsd-gemini-before-model',
+        'gsd-gemini-subagent-model',
         'gsd-context-monitor'
       ];
 
@@ -2187,13 +2187,13 @@ function install(isGlobal, runtime = 'claude') {
 
     // Configure BeforeModel hook for dynamic model injection
     const geminiBeforeModelCommand = isGlobal
-      ? buildHookCommand(targetDir, 'gsd-gemini-before-model.js')
-      : 'node ' + dirName + '/hooks/gsd-gemini-before-model.js';
+      ? buildHookCommand(targetDir, 'gsd-gemini-subagent-model.js')
+      : 'node ' + dirName + '/hooks/gsd-gemini-subagent-model.js';
 
     if (!settings.hooks.BeforeModel) settings.hooks.BeforeModel = [];
 
     const hasGeminiBeforeModelHook = settings.hooks.BeforeModel.some(entry =>
-      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('gsd-gemini-before-model'))
+      entry.hooks && entry.hooks.some(h => h.command && h.command.includes('gsd-gemini-subagent-model'))
     );
 
     if (!hasGeminiBeforeModelHook) {

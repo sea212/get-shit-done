@@ -14,7 +14,7 @@ const HOOKS_TO_COPY = [
   'gsd-check-update.js',
   'gsd-context-monitor.js',
   'gsd-statusline.js',
-  'gsd-gemini-before-model.js'
+  'gsd-gemini-subagent-model.js'
 ];
 
 function build() {

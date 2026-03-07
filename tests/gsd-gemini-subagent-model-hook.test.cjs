@@ -4,7 +4,7 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const HOOK_PATH = path.resolve(__dirname, '../hooks/gsd-gemini-before-model.js');
+const HOOK_PATH = path.resolve(__dirname, '../hooks/gsd-gemini-subagent-model.js');
 
 test('BeforeModel Hook: parses JSON and injects model', (t) => {
   const input = JSON.stringify({
