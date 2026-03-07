@@ -287,6 +287,33 @@ describe('resolveModelInternal', () => {
         console.warn = originalWarn;
       }
     });
+
+    test('returns unmodified when model already contains gemini', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({
+        model_overrides: { 'gsd-executor': 'gemini-1.5-flash-latest' }
+      });
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-1.5-flash-latest');
+    });
+
+    test('throws error when no mapping found in Gemini environment', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({
+        model_overrides: { 'gsd-executor': 'unknown-model-tier' }
+      });
+      assert.throws(() => {
+        resolveModelInternal(tmpDir, 'gsd-executor');
+      }, /Model 'unknown-model-tier' cannot be resolved for Gemini environment/);
+    });
+
+    test('maps based on key containment (e.g. claude-3-opus-20240229)', () => {
+      process.env.GEMINI_CLI = '1';
+      writeConfig({
+        model_overrides: { 'gsd-executor': 'claude-3-opus-20240229' }
+      });
+      // 'opus' is contained in 'claude-3-opus-20240229'
+      assert.strictEqual(resolveModelInternal(tmpDir, 'gsd-executor'), 'gemini-3.1-pro-preview');
+    });
   });
 });
 

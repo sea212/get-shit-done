@@ -77,6 +77,7 @@ progress:
 | remove-model-assumptions | Remove model assumptions in resolveModelInternal and throw errors instead | 2026-03-07 |
 | abandon-settings-json | Abandon local settings.json model overrides in favor of BeforeModel hook | 2026-03-07 |
 | remove-template-parsing | Remove default value parsing of templates/config.json from core.cjs | 2026-03-07 |
+| dynamic-model-mapping | Refactor resolveModelInternal for dynamic Gemini mapping and remove hardcoded assumptions | 2026-03-07 |
 
 ---
 *Last updated: 2026-03-07*

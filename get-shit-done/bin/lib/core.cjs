@@ -391,7 +391,7 @@ function resolveModelInternal(cwd, agentType, options = {}) {
   const override = config.model_overrides?.[agentType];
   let resolved;
   if (override) {
-    resolved = override === 'opus' ? 'inherit' : override;
+    resolved = override;
   } else {
     // Fall back to profile lookup
     const profile = config.model_profile || 'balanced';
@@ -403,26 +403,30 @@ function resolveModelInternal(cwd, agentType, options = {}) {
       if (!profileModel) {
         throw new Error(`Missing profile '${profile}' or 'balanced' for agent: ${agentType}`);
       }
-      resolved = profileModel === 'opus' ? 'inherit' : profileModel;
+      resolved = profileModel;
     }
   }
 
   // Intercept for Gemini if environment variable is set
   if (process.env.GEMINI_CLI === '1' || options.forceGemini) {
-    let tier = null;
-    if (resolved === 'inherit' || resolved.includes('opus')) tier = 'opus';
-    else if (resolved.includes('sonnet')) tier = 'sonnet';
-    else if (resolved.includes('haiku')) tier = 'haiku';
-
-    if (tier) {
-      const mapped = config.gemini?.mappings?.[tier];
-      if (mapped) return mapped;
-
-      const defaultValue = DEFAULT_GEMINI_MAPPINGS[tier];
-      if (defaultValue) return defaultValue;
-
-      throw new Error(`Missing mapping for Gemini tier: ${tier}`);
+    // 1. If the model name already contains 'gemini', return it unmodified
+    if (resolved.includes('gemini')) {
+      return resolved;
     }
+
+    // 2. Try to resolve using DEFAULT_GEMINI_MAPPINGS based on keys contained in the model name
+    for (const [key, defaultValue] of Object.entries(DEFAULT_GEMINI_MAPPINGS)) {
+      if (resolved.includes(key)) {
+        return (config.gemini?.mappings?.[key]) || defaultValue;
+      }
+    }
+
+    throw new Error(`Model '${resolved}' cannot be resolved for Gemini environment. No mapping found in DEFAULT_GEMINI_MAPPINGS.`);
+  }
+
+  // Map 'opus' tier models to 'inherit' for Anthropic/Claude Code backwards compatibility
+  if (resolved.includes('opus')) {
+    return 'inherit';
   }
 
   return resolved;
