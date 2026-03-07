@@ -424,11 +424,6 @@ function resolveModelInternal(cwd, agentType, options = {}) {
     throw new Error(`Model '${resolved}' cannot be resolved for Gemini environment. No mapping found in DEFAULT_GEMINI_MAPPINGS.`);
   }
 
-  // Map 'opus' tier models to 'inherit' for Anthropic/Claude Code backwards compatibility
-  if (resolved.includes('opus')) {
-    return 'inherit';
-  }
-
   return resolved;
 }
 

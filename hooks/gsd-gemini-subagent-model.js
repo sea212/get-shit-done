@@ -58,7 +58,8 @@ process.stdin.on('end', () => {
   }
   // Fallback: Abort model override
   else {
-    return;
+    process.stderr.write('Error: Unable to determine agent_type.\n');
+    process.exit(1);
   }
 
   let resolvedModel = null;
@@ -68,19 +69,18 @@ process.stdin.on('end', () => {
       resolvedModel = resolveModelInternal(cwd, agentType, { forceGemini: true });
     } catch (err) {
       process.stderr.write(`Error: resolveModelInternal failed: ${err.message}\n`);
+      process.exit(1);
     }
   }
 
   // Protocol: Modified fields must be returned under hookSpecificOutput
   const output = {
     hookSpecificOutput: {
-      llm_request: {}
+      llm_request: {
+        model: resolvedModel
+      }
     }
   };
-
-  if (resolvedModel) {
-    output.hookSpecificOutput.llm_request.model = resolvedModel;
-  }
 
   // Output modified JSON to stdout (the protocol)
   process.stdout.write(JSON.stringify(output));
