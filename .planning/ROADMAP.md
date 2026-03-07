@@ -28,7 +28,7 @@
 1. GSD automatically creates `.gemini/settings.json` in the project root if it doesn't exist.
 2. Manual updates to GSD model profiles (via config or commands) are immediately propagated to `.gemini/settings.json`.
 3. Existing user-defined settings in `.gemini/settings.json` are preserved during GSD synchronization.
-**Plans**: 2 plans
+**Plans**: 4 plans
 - [ ] 02-01-PLAN.md — Implement syncGeminiSettings to automatically create and synchronize .gemini/settings.json
 - [ ] 02-02-PLAN.md — Trigger synchronization of .gemini/settings.json dynamically when Gemini CLI is active
 
@@ -41,9 +41,11 @@
 1. A synchronization hook script (`hooks/gsd-gemini-sync.js`) exists and adheres to the Gemini CLI JSON protocol.
 2. GSD model profiles are automatically synced to the Gemini CLI configuration whenever the CLI starts.
 3. Errors in settings file access or hook execution are reported via `stderr` without breaking the CLI's JSON I/O.
-**Plans**: 2 plans
+**Plans**: 4 plans
 - [x] 03-01-PLAN.md — Implement the Gemini Sync Hook Script (completed 2026-03-05)
 - [x] 03-02-PLAN.md — Update Installer to Register Sync Hook (completed 2026-03-05)
+- [x] 03-03-PLAN.md — Fix hook script distribution in build process (gap closure) (completed 2026-03-07)
+- [x] 03-04-PLAN.md — Fix config synchronization and bypass guard in hook (gap closure) (completed 2026-03-07)
 
 ## Progress Table
 
@@ -52,4 +54,4 @@
 | 1. Foundation & Config Logic | 1/1 | Completed | 2026-03-05 |
 | 2. Settings Management & Propagation | 1/2 | Complete    | 2026-03-05 |
 | 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
-| 3. Lifecycle Hooks & Sync | 2/2 | Complete    | 2026-03-05 |
+| 3. Lifecycle Hooks & Sync | 4/4 | Completed | 2026-03-07 |
