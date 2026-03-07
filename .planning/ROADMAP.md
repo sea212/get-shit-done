@@ -6,6 +6,7 @@
 - [x] **Phase 2: Settings Management & Propagation** - Automatic maintenance of `.gemini/settings.json`. (completed 2026-03-05)
 - [x] **Phase 3: Lifecycle Hooks & Sync** - Integration with Gemini CLI lifecycle via startup hooks. (completed 2026-03-05)
 - [x] **Phase 4: Fix Gemini Model Mapping Bug** - Fix incorrect model mapping in `syncGeminiSettings`. (completed 2026-03-07)
+- [x] **Phase 5: Model Injection via BeforeModel Hook** - Transition from `settings.json` based approach to model injection via the `BeforeModel` hook, ensuring proper resolution of Gemini models. (completed 2026-03-07)
 
 ## Phase Details
 
@@ -58,6 +59,19 @@
 **Plans**: 
 - [x] 04-01-PLAN.md — Fix model resolution logic in syncGeminiSettings (completed 2026-03-07)
 
+### Phase 5: Model Injection via BeforeModel Hook
+**Goal**: Transition from `settings.json` based approach to model injection via the `BeforeModel` hook.
+**Depends on**: Phase 4
+**Requirements**: GEM-09-01
+**Success Criteria** (what must be TRUE):
+1. A `BeforeModel` hook script correctly intercepts model requests from `gemini-cli`.
+2. The hook script resolves the intended model for the current subagent using GSD's internal mappings.
+3. The hook script injects the correct Gemini model into the request on-the-fly.
+4. The system no longer relies on `settings.json` for turn-by-turn model overrides.
+**Plans**: 2 plans
+- [x] 05-01-PLAN.md — Implement model injection via BeforeModel hook. (completed 2026-03-07)
+- [x] 05-02-PLAN.md — Close UAT gaps regarding Gemini settings migration logic and uninstaller hook cleanup (completed 2026-03-07)
+
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
@@ -67,3 +81,4 @@
 | 02.1. Correct agent model overrides | 1/1 | Completed | 2026-03-05 |
 | 3. Lifecycle Hooks & Sync | 4/4 | Completed | 2026-03-07 |
 | 4. Fix Gemini Model Mapping Bug | 1/1 | Completed | 2026-03-07 |
+| 5. Model Injection via BeforeModel Hook | 2/2 | Completed | 2026-03-07 |
