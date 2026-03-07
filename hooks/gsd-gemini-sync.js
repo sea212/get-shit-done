@@ -30,7 +30,7 @@ process.stdin.on('end', () => {
     }
 
     // Synchronize GSD settings to .gemini/settings.json
-    syncGeminiSettings(cwd);
+    syncGeminiSettings(cwd, { force: true });
 
     // Protocol response
     console.log(JSON.stringify({ status: "ok" }));
