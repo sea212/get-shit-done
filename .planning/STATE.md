@@ -75,6 +75,7 @@ progress:
 | Task ID | Description | Completed At |
 |---------|-------------|--------------|
 | abandon-settings-json | Abandon local settings.json model overrides in favor of BeforeModel hook | 2026-03-07 |
+| remove-template-parsing | Remove default value parsing of templates/config.json from core.cjs | 2026-03-07 |
 
 ---
 *Last updated: 2026-03-07*
