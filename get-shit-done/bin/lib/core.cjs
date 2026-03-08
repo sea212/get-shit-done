@@ -31,9 +31,9 @@ const MODEL_PROFILES = {
 };
 
 const DEFAULT_GEMINI_MAPPINGS = {
-  opus: 'gemini-3.1-pro-preview',
-  sonnet: 'gemini-3-flash-preview',
-  haiku: 'gemini-2.5-flash-lite',
+  opus: 'pro',
+  sonnet: 'flash',
+  haiku: 'lite',
 };
 
 // ─── Output helpers ───────────────────────────────────────────────────────────
